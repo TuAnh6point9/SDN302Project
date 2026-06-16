@@ -1,0 +1,290 @@
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { bookApi } from '../api/bookApi';
+import { categoryApi } from '../api/categoryApi';
+import BookCard from '../components/BookCard';
+import Pagination from '../components/Pagination';
+import CategoryTree from '../components/CategoryTree';
+import { BookOpen, SlidersHorizontal, ArrowUpDown, X, Tag } from 'lucide-react';
+import type { IBook, ICategory } from '../types';
+
+const PRESET_TAGS = ['Sách hiếm', 'Khám phá', 'Giáo trình', 'Sách ảnh', 'Sinh thái', 'Hướng dẫn'];
+
+export default function CatalogPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  const [books, setBooks] = useState<IBook[]>([]);
+  const [categories, setCategories] = useState<ICategory[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+
+  // Parse state from URL params
+  const category = searchParams.get('category') || '';
+  const search = searchParams.get('search') || '';
+  const sort = searchParams.get('sort') || 'newest';
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const selectedTag = searchParams.get('tag') || '';
+
+  useEffect(() => {
+    categoryApi.getCategories()
+      .then(setCategories)
+      .catch(err => console.error('Error fetching categories:', err));
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    // Build params for api call
+    const params: any = {
+      page,
+      limit: 12,
+      sort,
+    };
+
+    if (category) params.category = category;
+    
+    // Combine search query and tag query if selected
+    if (search && selectedTag) {
+      params.search = `${search} ${selectedTag}`;
+    } else if (search) {
+      params.search = search;
+    } else if (selectedTag) {
+      params.search = selectedTag;
+    }
+
+    bookApi.getBooks(params)
+      .then(res => {
+        setBooks(res.books);
+        setTotalPages(res.pagination.totalPages);
+      })
+      .catch(err => console.error('Error fetching books:', err))
+      .finally(() => setLoading(false));
+  }, [category, search, sort, page, selectedTag]);
+
+  const updateParam = (key: string, value: string | number) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (value) {
+        next.set(key, String(value));
+      } else {
+        next.delete(key);
+      }
+      // Reset page when filter changes
+      if (key !== 'page') {
+        next.set('page', '1');
+      }
+      return next;
+    });
+  };
+
+  const clearAllFilters = () => {
+    setSearchParams(new URLSearchParams());
+    setShowMobileFilters(false);
+  };
+
+  return (
+    <div className="page-container py-8 space-y-6">
+      {/* Title / Info Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 pb-4">
+        <div>
+          <h1 className="text-3xl font-bold font-heading text-text">
+            {search ? `Kết quả tìm kiếm cho "${search}"` : 'Trưng Bày Sách'}
+          </h1>
+          <p className="text-text-secondary text-sm mt-1">
+            Không gian giới thiệu và tìm hiểu thông tin đa dạng các loài
+          </p>
+        </div>
+
+        {/* Clear Filters Button (Visible if active filters) */}
+        {(category || search || selectedTag) && (
+          <button
+            onClick={clearAllFilters}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors w-fit"
+          >
+            <X className="w-3.5 h-3.5" /> Xóa bộ lọc
+          </button>
+        )}
+      </div>
+
+      {/* Main Catalog Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Mobile Filters Toggle Button */}
+        <div className="lg:hidden flex gap-4 w-full">
+          <button
+            onClick={() => setShowMobileFilters(true)}
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-text rounded-xl shadow-sm text-sm font-semibold"
+          >
+            <SlidersHorizontal className="w-4 h-4 text-primary" /> Bộ lọc
+          </button>
+          <div className="relative flex-1">
+            <select
+              value={sort}
+              onChange={(e) => updateParam('sort', e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold appearance-none focus:outline-none"
+            >
+              <option value="newest">Mới nhất</option>
+              <option value="featured">Nổi bật</option>
+              <option value="price_asc">Giá tăng dần</option>
+              <option value="price_desc">Giá giảm dần</option>
+            </select>
+            <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
+          </div>
+        </div>
+
+        {/* Left Side: Sidebar Filter (Desktop) */}
+        <aside className="hidden lg:block lg:col-span-3 space-y-6 sticky top-24">
+          {/* Category Section */}
+          <div className="bg-white rounded-2xl border border-gray-150 p-5 shadow-sm space-y-4">
+            <h3 className="font-heading font-bold text-base text-primary-dark border-b border-gray-100 pb-2">
+              Danh mục
+            </h3>
+            <CategoryTree
+              categories={categories}
+              selectedCategory={category}
+              onSelectCategory={(slug) => updateParam('category', slug)}
+            />
+          </div>
+
+          {/* Tags Section */}
+          <div className="bg-white rounded-2xl border border-gray-150 p-5 shadow-sm space-y-4">
+            <h3 className="font-heading font-bold text-base text-primary-dark border-b border-gray-100 pb-2 flex items-center gap-1.5">
+              <Tag className="w-4 h-4" /> Thẻ từ khóa
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {PRESET_TAGS.map(tag => (
+                <button
+                  key={tag}
+                  onClick={() => updateParam('tag', selectedTag === tag ? '' : tag)}
+                  className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-all duration-250 ${
+                    selectedTag === tag
+                      ? 'bg-primary border-primary text-white shadow-sm'
+                      : 'bg-background hover:bg-primary-light/10 border-transparent text-text-secondary hover:text-primary'
+                  }`}
+                >
+                  #{tag}
+                </button>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        {/* Right Side: List & Pagination */}
+        <div className="lg:col-span-9 space-y-6">
+          {/* Desktop Toolbar */}
+          <div className="hidden lg:flex items-center justify-between bg-white border border-gray-100 px-5 py-3 rounded-2xl shadow-sm">
+            <span className="text-sm text-text-secondary">
+              Hiển thị sách trưng bày
+            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-text-secondary">Sắp xếp:</span>
+              <select
+                value={sort}
+                onChange={(e) => updateParam('sort', e.target.value)}
+                className="pl-3 pr-8 py-1.5 bg-background border-none rounded-xl text-sm font-semibold appearance-none focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer text-text"
+              >
+                <option value="newest">Mới nhất</option>
+                <option value="featured">Nổi bật</option>
+                <option value="price_asc">Giá tăng dần</option>
+                <option value="price_desc">Giá giảm dần</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Book Cards Grid */}
+          {loading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="card animate-pulse aspect-[3/4] bg-gray-200 rounded-2xl" />
+              ))}
+            </div>
+          ) : books.length > 0 ? (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-6">
+                {books.map(book => (
+                  <BookCard key={book._id} book={book} />
+                ))}
+              </div>
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={(p) => updateParam('page', p)}
+              />
+            </>
+          ) : (
+            <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300 p-8 space-y-3">
+              <BookOpen className="w-16 h-16 text-gray-300 mx-auto" />
+              <h3 className="text-lg font-semibold text-text">Không tìm thấy cuốn sách nào</h3>
+              <p className="text-sm text-text-secondary max-w-sm mx-auto">
+                Hiện tại chưa có đầu sách nào khớp với lựa chọn của bạn. Thử tìm kiếm từ khóa khác hoặc xóa bộ lọc.
+              </p>
+              <button
+                onClick={clearAllFilters}
+                className="btn-primary mt-2"
+              >
+                Xóa tất cả bộ lọc
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile Drawer Filter Dialog */}
+      {showMobileFilters && (
+        <div className="fixed inset-0 z-50 lg:hidden flex flex-col bg-background/95 backdrop-blur-sm p-6 overflow-y-auto animate-in fade-in duration-200">
+          <div className="flex justify-between items-center border-b border-gray-200 pb-3 mb-6">
+            <h2 className="text-xl font-bold font-heading text-primary-dark">Bộ lọc tìm kiếm</h2>
+            <button
+              onClick={() => setShowMobileFilters(false)}
+              className="p-2 hover:bg-gray-200 rounded-lg text-text-secondary"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Filter Categories */}
+          <div className="space-y-4 mb-8">
+            <h3 className="font-heading font-semibold text-text border-b border-gray-100 pb-1.5">Danh mục</h3>
+            <CategoryTree
+              categories={categories}
+              selectedCategory={category}
+              onSelectCategory={(slug) => {
+                updateParam('category', slug);
+                setShowMobileFilters(false);
+              }}
+            />
+          </div>
+
+          {/* Filter Tags */}
+          <div className="space-y-4 mb-8">
+            <h3 className="font-heading font-semibold text-text border-b border-gray-100 pb-1.5">Từ khóa</h3>
+            <div className="flex flex-wrap gap-2">
+              {PRESET_TAGS.map(tag => (
+                <button
+                  key={tag}
+                  onClick={() => {
+                    updateParam('tag', selectedTag === tag ? '' : tag);
+                    setShowMobileFilters(false);
+                  }}
+                  className={`text-xs px-3 py-1.5 rounded-lg border font-medium ${
+                    selectedTag === tag
+                      ? 'bg-primary border-primary text-white shadow-sm'
+                      : 'bg-white border-gray-200 text-text-secondary'
+                  }`}
+                >
+                  #{tag}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={clearAllFilters}
+            className="btn-outline !py-3 w-full mt-auto"
+          >
+            Mặc định tất cả
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

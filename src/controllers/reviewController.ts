@@ -1,0 +1,51 @@
+import { Request, Response } from "express";
+import { Book } from "../models/Book";
+import { Review } from "../models/Review";
+import { ApiError } from "../utils/ApiError";
+import { asyncHandler } from "../utils/asyncHandler";
+
+const refreshBookRating = async (bookId: string) => {
+  const stats = await Review.aggregate([
+    { $match: { book: new Book.base.Types.ObjectId(bookId) } },
+    {
+      $group: {
+        _id: "$book",
+        ratingAverage: { $avg: "$rating" },
+        numReviews: { $sum: 1 }
+      }
+    }
+  ]);
+
+  await Book.findByIdAndUpdate(bookId, {
+    ratingAverage: stats[0] ? Number(stats[0].ratingAverage.toFixed(1)) : 0,
+    numReviews: stats[0]?.numReviews ?? 0
+  });
+};
+
+export const createReview = asyncHandler(async (req: Request, res: Response) => {
+  const book = await Book.findById(req.params.id);
+
+  if (!book) {
+    throw new ApiError(404, "Không tìm thấy sách");
+  }
+
+  const review = await Review.create({
+    user: req.user!._id,
+    book: book._id,
+    rating: req.body.rating,
+    comment: req.body.comment
+  });
+
+  await refreshBookRating(String(book._id));
+  res.status(201).json({ review });
+});
+
+export const getBookReviews = asyncHandler(
+  async (req: Request, res: Response) => {
+    const reviews = await Review.find({ book: req.params.id })
+      .populate("user", "name avatar")
+      .sort({ createdAt: -1 });
+
+    res.json({ reviews });
+  }
+);
