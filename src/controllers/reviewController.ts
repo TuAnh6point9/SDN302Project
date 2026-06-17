@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { Book } from "../models/Book";
+import { Order } from "../models/Order";
 import { Review } from "../models/Review";
 import { ApiError } from "../utils/ApiError";
 import { asyncHandler } from "../utils/asyncHandler";
@@ -26,7 +27,17 @@ export const createReview = asyncHandler(async (req: Request, res: Response) => 
   const book = await Book.findById(req.params.id);
 
   if (!book) {
-    throw new ApiError(404, "Không tìm thấy sách");
+    throw new ApiError(404, "Khong tim thay sach");
+  }
+
+  const purchasedOrder = await Order.findOne({
+    user: req.user!._id,
+    orderStatus: "delivered",
+    "items.book": book._id
+  }).select("_id");
+
+  if (!purchasedOrder) {
+    throw new ApiError(403, "Chi khach hang da mua va nhan sach moi co the danh gia");
   }
 
   const review = await Review.create({

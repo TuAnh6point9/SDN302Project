@@ -1,7 +1,12 @@
 import { z } from "zod";
 
-const objectId = z.string().regex(/^[0-9a-fA-F]{24}$/, "ObjectId không hợp lệ");
+const objectId = z.string().regex(/^[0-9a-fA-F]{24}$/, "ObjectId khong hop le");
 const idOrSlug = z.string().min(1);
+const queryBoolean = z.preprocess((value) => {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  return value;
+}, z.boolean());
 
 const addressSchema = z.object({
   recipientName: z.string().trim().min(2),
@@ -28,6 +33,41 @@ export const loginSchema = z.object({
   })
 });
 
+export const updateProfileSchema = z.object({
+  body: z
+    .object({
+      name: z.string().trim().min(2).max(120).optional(),
+      phone: z.string().trim().optional(),
+      avatar: z.string().trim().optional(),
+      addresses: z.array(addressSchema).optional()
+    })
+    .refine((value) => Object.keys(value).length > 0, {
+      message: "Can it nhat mot field de cap nhat"
+    })
+});
+
+export const changePasswordSchema = z.object({
+  body: z.object({
+    currentPassword: z.string().min(1),
+    newPassword: z.string().min(8)
+  })
+});
+
+export const userParamsSchema = z.object({
+  params: z.object({ id: objectId })
+});
+
+export const updateUserSchema = z.object({
+  body: z
+    .object({
+      role: z.enum(["customer", "admin"]).optional(),
+      isActive: z.boolean().optional()
+    })
+    .refine((value) => Object.keys(value).length > 0, {
+      message: "Can it nhat mot field de cap nhat"
+    })
+});
+
 export const categorySchema = z.object({
   body: z.object({
     name: z.string().trim().min(2).max(120),
@@ -42,6 +82,11 @@ export const listBooksSchema = z.object({
   query: z.object({
     category: z.string().trim().optional(),
     search: z.string().trim().optional(),
+    tag: z.string().trim().optional(),
+    minPrice: z.coerce.number().min(0).optional(),
+    maxPrice: z.coerce.number().min(0).optional(),
+    inStock: queryBoolean.optional(),
+    minRating: z.coerce.number().min(0).max(5).optional(),
     sort: z
       .enum(["newest", "price_asc", "price_desc", "featured"])
       .optional(),
@@ -78,7 +123,45 @@ export const createBookSchema = z.object({ body: bookPayload });
 export const updateBookSchema = z.object({
   params: z.object({ id: idOrSlug }),
   body: bookPayload.partial().refine((value) => Object.keys(value).length > 0, {
-    message: "Cần ít nhất một field để cập nhật"
+    message: "Can it nhat mot field de cap nhat"
+  })
+});
+
+export const createVoucherSchema = z.object({
+  body: z.object({
+    code: z.string().trim().min(3).max(40),
+    type: z.enum(["percent", "fixed"]),
+    value: z.number().min(0),
+    minOrderValue: z.number().min(0).optional().default(0),
+    maxDiscount: z.number().min(0).optional(),
+    usageLimit: z.number().int().positive().optional(),
+    startsAt: z.string().datetime().optional(),
+    expiresAt: z.string().datetime().optional(),
+    isActive: z.boolean().optional().default(true)
+  })
+});
+
+export const updateVoucherSchema = z.object({
+  params: z.object({
+    code: z.string().trim().min(3).max(40)
+  }),
+  body: createVoucherSchema.shape.body.partial().refine((value) => Object.keys(value).length > 0, {
+    message: "Can it nhat mot field de cap nhat"
+  })
+});
+
+export const voucherCodeSchema = z.object({
+  params: z.object({
+    code: z.string().trim().min(3).max(40)
+  })
+});
+
+export const validateVoucherSchema = z.object({
+  params: z.object({
+    code: z.string().trim().min(3).max(40)
+  }),
+  query: z.object({
+    subtotal: z.coerce.number().min(0)
   })
 });
 
@@ -98,6 +181,10 @@ export const updateCartItemSchema = z.object({
   body: z.object({ quantity: z.number().int().min(1) })
 });
 
+export const wishlistParamsSchema = z.object({
+  params: z.object({ bookId: objectId })
+});
+
 const orderItemSchema = z.object({
   book: objectId,
   quantity: z.number().int().min(1)
@@ -110,7 +197,8 @@ export const createOrderSchema = z.object({
     items: z.array(orderItemSchema).min(1).optional(),
     shippingAddress: shippingAddressSchema,
     shippingFee: z.number().min(0).optional().default(0),
-    paymentMethod: z.literal("COD").optional().default("COD")
+    voucherCode: z.string().trim().optional(),
+    paymentMethod: z.enum(["COD", "ONLINE"]).optional().default("COD")
   })
 });
 
@@ -128,7 +216,9 @@ export const updateOrderStatusSchema = z.object({
       "delivered",
       "cancelled"
     ]),
-    paymentStatus: z.enum(["pending", "paid", "failed"]).optional()
+    paymentStatus: z.enum(["pending", "paid", "failed"]).optional(),
+    note: z.string().trim().max(500).optional(),
+    cancelReason: z.string().trim().max(500).optional()
   })
 });
 

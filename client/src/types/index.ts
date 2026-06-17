@@ -74,10 +74,21 @@ export interface IUser {
   name: string;
   email: string;
   role: UserRole;
+  isActive: boolean;
   phone?: string;
+  addresses?: IUserAddress[];
   avatar?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface IUserAddress {
+  _id?: string;
+  recipientName: string;
+  phone: string;
+  addressLine: string;
+  city: string;
+  isDefault?: boolean;
 }
 
 export interface ILoginPayload {
@@ -85,9 +96,120 @@ export interface ILoginPayload {
   password: string;
 }
 
+export interface IRegisterPayload {
+  name: string;
+  email: string;
+  password: string;
+  phone?: string;
+}
+
+export interface IUpdateProfilePayload {
+  name?: string;
+  phone?: string;
+  avatar?: string;
+  addresses?: IUserAddress[];
+}
+
 export interface IAuthResponse {
   user: IUser;
   token: string;
+}
+
+// Cart / Order
+
+export interface ICartItem {
+  _id: string;
+  book: IBook;
+  quantity: number;
+}
+
+export interface ICart {
+  _id: string;
+  user: string;
+  items: ICartItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IShippingAddress {
+  recipientName: string;
+  phone: string;
+  addressLine: string;
+  city: string;
+}
+
+export type PaymentMethod = 'COD' | 'ONLINE';
+export type PaymentStatus = 'pending' | 'paid' | 'failed';
+export type OrderStatus = 'pending' | 'confirmed' | 'shipping' | 'delivered' | 'cancelled';
+
+export interface IOrderItem {
+  book: string;
+  title: string;
+  price: number;
+  quantity: number;
+}
+
+export interface IOrder {
+  _id: string;
+  orderCode: string;
+  user: IUser | string;
+  items: IOrderItem[];
+  subtotal: number;
+  discountTotal: number;
+  voucherCode?: string;
+  shippingFee: number;
+  total: number;
+  shippingAddress: IShippingAddress;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
+  orderStatus: OrderStatus;
+  cancelReason?: string;
+  statusHistory?: IOrderStatusHistory[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IOrderStatusHistory {
+  status: OrderStatus;
+  note?: string;
+  changedBy?: string | Pick<IUser, '_id' | 'name' | 'email'>;
+  changedAt: string;
+}
+
+export interface ICreateOrderPayload {
+  items?: Array<{ book: string; quantity: number }>;
+  shippingAddress: IShippingAddress;
+  shippingFee?: number;
+  voucherCode?: string;
+  paymentMethod?: PaymentMethod;
+}
+
+export type VoucherType = 'percent' | 'fixed';
+
+export interface IVoucher {
+  _id: string;
+  code: string;
+  type: VoucherType;
+  value: number;
+  minOrderValue: number;
+  maxDiscount?: number;
+  usageLimit?: number;
+  usedCount: number;
+  startsAt?: string;
+  expiresAt?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IReview {
+  _id: string;
+  user: Pick<IUser, '_id' | 'name' | 'avatar'>;
+  book: string;
+  rating: number;
+  comment?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ─── Pagination ──────────────────────────────────────────────────────────────
@@ -109,5 +231,10 @@ export interface IBooksQueryParams {
   limit?: number;
   category?: string;
   search?: string;
+  tag?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  inStock?: boolean;
+  minRating?: number;
   sort?: 'newest' | 'price_asc' | 'price_desc' | 'featured';
 }

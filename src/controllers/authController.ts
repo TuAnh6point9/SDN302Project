@@ -1,5 +1,6 @@
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
+import { IUserAddress } from "../models/User";
 import { User } from "../models/User";
 import { ApiError } from "../utils/ApiError";
 import { asyncHandler } from "../utils/asyncHandler";
@@ -35,6 +36,10 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(401, "Email hoặc mật khẩu không đúng");
   }
 
+  if (!user.isActive) {
+    throw new ApiError(403, "Tai khoan dang bi khoa");
+  }
+
   const isMatch = await bcrypt.compare(password, user.passwordHash);
   if (!isMatch) {
     throw new ApiError(401, "Email hoặc mật khẩu không đúng");
@@ -46,4 +51,62 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 
 export const getMe = asyncHandler(async (req: Request, res: Response) => {
   res.json({ user: req.user });
+});
+
+const normalizeAddresses = (addresses?: IUserAddress[]) => {
+  if (!addresses?.length) return addresses;
+
+  let hasDefault = false;
+  return addresses.map((address, index) => {
+    const isDefault = address.isDefault && !hasDefault;
+    if (isDefault) {
+      hasDefault = true;
+    }
+
+    return {
+      ...address,
+      isDefault: isDefault || (!hasDefault && index === addresses.length - 1)
+    };
+  });
+};
+
+export const updateMe = asyncHandler(async (req: Request, res: Response) => {
+  const update: {
+    name?: string;
+    phone?: string;
+    avatar?: string;
+    addresses?: IUserAddress[];
+  } = {};
+
+  if (req.body.name !== undefined) update.name = req.body.name;
+  if (req.body.phone !== undefined) update.phone = req.body.phone;
+  if (req.body.avatar !== undefined) update.avatar = req.body.avatar;
+  if (req.body.addresses !== undefined) {
+    update.addresses = normalizeAddresses(req.body.addresses);
+  }
+
+  const user = await User.findByIdAndUpdate(req.user!._id, update, {
+    new: true,
+    runValidators: true
+  });
+
+  res.json({ user });
+});
+
+export const changePassword = asyncHandler(async (req: Request, res: Response) => {
+  const user = await User.findById(req.user!._id).select("+passwordHash");
+
+  if (!user) {
+    throw new ApiError(404, "Khong tim thay nguoi dung");
+  }
+
+  const isMatch = await bcrypt.compare(req.body.currentPassword, user.passwordHash);
+  if (!isMatch) {
+    throw new ApiError(400, "Mat khau hien tai khong dung");
+  }
+
+  user.passwordHash = await bcrypt.hash(req.body.newPassword, 12);
+  await user.save();
+
+  res.json({ message: "Da doi mat khau" });
 });

@@ -1,12 +1,16 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { authApi } from '../api/authApi';
-import type { IUser, ILoginPayload } from '../types';
+import type { IUser, ILoginPayload, IRegisterPayload, IUpdateProfilePayload } from '../types';
 
 interface AuthContextType {
   user: IUser | null;
   isLoading: boolean;
   isAdmin: boolean;
-  login: (payload: ILoginPayload) => Promise<void>;
+  login: (payload: ILoginPayload) => Promise<IUser>;
+  register: (payload: IRegisterPayload) => Promise<IUser>;
+  updateProfile: (payload: IUpdateProfilePayload) => Promise<IUser>;
+  changePassword: (payload: { currentPassword: string; newPassword: string }) => Promise<void>;
   logout: () => void;
 }
 
@@ -23,7 +27,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('greenleaf_token');
     const savedUser = localStorage.getItem('greenleaf_user');
 
-    if (token && savedUser) {
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
+
+    if (savedUser) {
       try {
         setUser(JSON.parse(savedUser));
       } catch {
@@ -31,7 +40,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('greenleaf_user');
       }
     }
-    setIsLoading(false);
+
+    authApi.getMe()
+      .then((freshUser) => {
+        localStorage.setItem('greenleaf_user', JSON.stringify(freshUser));
+        setUser(freshUser);
+      })
+      .catch(() => {
+        localStorage.removeItem('greenleaf_token');
+        localStorage.removeItem('greenleaf_user');
+        setUser(null);
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   const login = useCallback(async (payload: ILoginPayload) => {
@@ -39,6 +59,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('greenleaf_token', token);
     localStorage.setItem('greenleaf_user', JSON.stringify(loggedInUser));
     setUser(loggedInUser);
+    return loggedInUser;
+  }, []);
+
+  const register = useCallback(async (payload: IRegisterPayload) => {
+    const { user: registeredUser, token } = await authApi.register(payload);
+    localStorage.setItem('greenleaf_token', token);
+    localStorage.setItem('greenleaf_user', JSON.stringify(registeredUser));
+    setUser(registeredUser);
+    return registeredUser;
+  }, []);
+
+  const updateProfile = useCallback(async (payload: IUpdateProfilePayload) => {
+    const updatedUser = await authApi.updateMe(payload);
+    localStorage.setItem('greenleaf_user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+    return updatedUser;
+  }, []);
+
+  const changePassword = useCallback(async (payload: { currentPassword: string; newPassword: string }) => {
+    await authApi.changePassword(payload);
   }, []);
 
   const logout = useCallback(() => {
@@ -48,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAdmin, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, isAdmin, login, register, updateProfile, changePassword, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -27,6 +27,10 @@ export const protect = asyncHandler(
       throw new ApiError(401, "Token không còn hợp lệ");
     }
 
+    if (!user.isActive) {
+      throw new ApiError(403, "Tai khoan dang bi khoa");
+    }
+
     req.user = user;
     next();
   }

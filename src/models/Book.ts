@@ -68,7 +68,10 @@ const bookSchema = new Schema<IBook>(
 );
 
 // Index phục vụ search nhanh theo tên sách, tác giả và tag.
-bookSchema.index({ title: "text", author: "text", tags: "text" });
+bookSchema.index(
+  { title: "text", author: "text", tags: "text" },
+  { default_language: "none", language_override: "textLanguage" }
+);
 
 // Index phục vụ filter theo category và sort/filter theo giá.
 bookSchema.index({ category: 1, price: 1 });

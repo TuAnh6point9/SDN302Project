@@ -1,4 +1,4 @@
-import { Document, Model, Schema, model } from "mongoose";
+import { Document, Model, Schema, Types, model } from "mongoose";
 
 export type UserRole = "customer" | "admin";
 
@@ -15,8 +15,10 @@ export interface IUser extends Document {
   email: string;
   passwordHash: string;
   role: UserRole;
+  isActive: boolean;
   phone?: string;
   addresses: IUserAddress[];
+  wishlist: Types.ObjectId[];
   avatar?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -50,8 +52,10 @@ const userSchema = new Schema<IUser>(
       enum: ["customer", "admin"],
       default: "customer"
     },
+    isActive: { type: Boolean, default: true },
     phone: { type: String, trim: true },
     addresses: { type: [addressSchema], default: [] },
+    wishlist: { type: [Schema.Types.ObjectId], ref: "Book", default: [] },
     avatar: { type: String, trim: true }
   },
   {

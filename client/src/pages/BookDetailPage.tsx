@@ -1,23 +1,48 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { bookApi } from '../api/bookApi';
-import { ArrowLeft, BookOpen, Calendar, Globe, Hash, FileText, Star, Award, ChevronRight, Bookmark } from 'lucide-react';
+import { reviewApi } from '../api/reviewApi';
+import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
+import { useWishlist } from '../contexts/WishlistContext';
+import { ArrowLeft, BookOpen, Calendar, Globe, Hash, FileText, Star, Award, ChevronRight, Bookmark, ShoppingCart, AlertCircle, Heart } from 'lucide-react';
 import type { IBook, ICategory } from '../types';
+import type { IReview } from '../types';
+import { getApiErrorMessage } from '../utils/errors';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
 export default function BookDetailPage() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { addToCart } = useCart();
+  const { wishlistIds, toggleWishlist } = useWishlist();
   const [book, setBook] = useState<IBook | null>(null);
+  const [reviews, setReviews] = useState<IReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showSampleModal, setShowSampleModal] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [cartMessage, setCartMessage] = useState('');
+  const [cartError, setCartError] = useState('');
+  const [wishlistMessage, setWishlistMessage] = useState('');
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewError, setReviewError] = useState('');
+  const [reviewSuccess, setReviewSuccess] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
     bookApi.getBookBySlug(slug)
-      .then(setBook)
+      .then((nextBook) => {
+        setBook(nextBook);
+        return reviewApi.getBookReviews(nextBook._id);
+      })
+      .then(setReviews)
       .catch(err => {
         console.error('Error fetching book detail:', err);
         setError('Không tìm thấy cuốn sách này hoặc đã có lỗi xảy ra.');
@@ -52,6 +77,64 @@ export default function BookDetailPage() {
   const formattedPrice = book.price > 0
     ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(book.price)
     : 'Liên hệ';
+
+  const handleAddToCart = async () => {
+    setCartError('');
+    setCartMessage('');
+
+    if (!user) {
+      navigate('/login', { state: { from: `/books/${book.slug}` } });
+      return;
+    }
+
+    try {
+      await addToCart(book._id, quantity);
+      setCartMessage('Đã thêm sách vào giỏ hàng.');
+    } catch (err: unknown) {
+      setCartError(getApiErrorMessage(err, 'Không thể thêm vào giỏ hàng.'));
+    }
+  };
+
+  const handleSubmitReview = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setReviewError('');
+    setReviewSuccess('');
+
+    if (!user) {
+      navigate('/login', { state: { from: `/books/${book.slug}` } });
+      return;
+    }
+
+    setSubmittingReview(true);
+    try {
+      const review = await reviewApi.createReview(book._id, {
+        rating: reviewRating,
+        comment: reviewComment || undefined,
+      });
+      setReviews((current) => [review, ...current]);
+      setReviewComment('');
+      setReviewSuccess('Đã gửi đánh giá của bạn.');
+
+      const refreshedBook = await bookApi.getBookBySlug(book.slug);
+      setBook(refreshedBook);
+    } catch (err: unknown) {
+      setReviewError(getApiErrorMessage(err, 'Không thể gửi đánh giá.'));
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const handleToggleWishlist = async () => {
+    setWishlistMessage('');
+
+    if (!user) {
+      navigate('/login', { state: { from: `/books/${book.slug}` } });
+      return;
+    }
+
+    const isAdded = await toggleWishlist(book._id);
+    setWishlistMessage(isAdded ? 'Đã thêm vào sách yêu thích.' : 'Đã bỏ khỏi sách yêu thích.');
+  };
 
   return (
     <div className="page-container py-8 space-y-10">
@@ -185,9 +268,43 @@ export default function BookDetailPage() {
           </div>
 
           <div className="pt-4 border-t border-gray-100 flex flex-wrap gap-4">
+            <div className="flex items-center gap-3 w-full">
+              <label className="text-sm font-semibold text-text-secondary">Số lượng</label>
+              <input
+                type="number"
+                min={1}
+                max={Math.max(1, book.stockQuantity)}
+                value={quantity}
+                onChange={(event) => setQuantity(Math.max(1, Number(event.target.value)))}
+                className="input-field !w-24 !py-2 text-sm"
+                disabled={book.stockQuantity <= 0}
+              />
+              <span className="text-xs text-text-secondary">Còn {book.stockQuantity} cuốn</span>
+            </div>
+            {cartMessage && <p className="text-sm text-primary font-semibold w-full">{cartMessage}</p>}
+            {wishlistMessage && <p className="text-sm text-primary font-semibold w-full">{wishlistMessage}</p>}
+            {cartError && (
+              <p className="text-sm text-red-600 font-semibold w-full inline-flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4" /> {cartError}
+              </p>
+            )}
+            <button
+              onClick={handleAddToCart}
+              disabled={book.stockQuantity <= 0}
+              className="btn-primary flex-1 min-w-[200px] disabled:opacity-50"
+            >
+              <ShoppingCart className="w-4 h-4" /> Thêm vào giỏ
+            </button>
+            <button
+              onClick={handleToggleWishlist}
+              className="btn-outline flex-1 min-w-[200px]"
+            >
+              <Heart className={`w-4 h-4 ${wishlistIds.has(book._id) ? 'fill-primary text-primary' : ''}`} />
+              {wishlistIds.has(book._id) ? 'Bỏ yêu thích' : 'Yêu thích'}
+            </button>
             <button
               onClick={() => setShowSampleModal(true)}
-              className="btn-primary flex-1 min-w-[200px]"
+              className="btn-outline flex-1 min-w-[200px]"
             >
               <BookOpen className="w-4 h-4" /> Đọc thử một phần
             </button>
@@ -206,6 +323,67 @@ export default function BookDetailPage() {
         <div className="text-text-secondary text-sm md:text-base leading-relaxed whitespace-pre-line">
           {book.description}
         </div>
+      </div>
+
+      <div className="bg-white rounded-3xl border border-gray-150/50 p-6 md:p-8 shadow-sm space-y-5">
+        <h2 className="text-xl font-bold font-heading text-primary-dark border-b border-gray-100 pb-3 flex items-center gap-2">
+          <Star className="w-5 h-5" /> Đánh giá từ độc giả
+        </h2>
+        <form onSubmit={handleSubmitReview} className="border border-gray-100 rounded-2xl p-4 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+            <div>
+              <h3 className="font-semibold text-text">Viết đánh giá</h3>
+              <p className="text-xs text-text-secondary mt-0.5">Chỉ khách hàng đã nhận sách mới có thể đánh giá.</p>
+            </div>
+            <select
+              value={reviewRating}
+              onChange={(event) => setReviewRating(Number(event.target.value))}
+              className="input-field !py-2 text-sm sm:!w-36"
+            >
+              <option value={5}>5 sao</option>
+              <option value={4}>4 sao</option>
+              <option value={3}>3 sao</option>
+              <option value={2}>2 sao</option>
+              <option value={1}>1 sao</option>
+            </select>
+          </div>
+          <textarea
+            value={reviewComment}
+            onChange={(event) => setReviewComment(event.target.value)}
+            maxLength={1000}
+            rows={3}
+            placeholder="Chia sẻ cảm nhận của bạn về cuốn sách..."
+            className="input-field text-sm"
+          />
+          {reviewError && (
+            <p className="text-sm text-red-600 inline-flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4" /> {reviewError}
+            </p>
+          )}
+          {reviewSuccess && <p className="text-sm text-primary font-semibold">{reviewSuccess}</p>}
+          <div className="flex justify-end">
+            <button type="submit" disabled={submittingReview} className="btn-primary !py-2.5 text-sm disabled:opacity-50">
+              {submittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
+            </button>
+          </div>
+        </form>
+        {reviews.length === 0 ? (
+          <p className="text-sm text-text-secondary">Chưa có đánh giá nào cho cuốn sách này.</p>
+        ) : (
+          <div className="space-y-4">
+            {reviews.map((review) => (
+              <div key={review._id} className="border border-gray-100 rounded-2xl p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-semibold text-sm text-text">{review.user.name}</p>
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-yellow-700">
+                    <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" /> {review.rating}/5
+                  </span>
+                </div>
+                {review.comment && <p className="text-sm text-text-secondary mt-2">{review.comment}</p>}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Sample reading Modal */}

@@ -1,7 +1,9 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect } from 'react';
 import { categoryApi } from '../../api/categoryApi';
 import { Plus, FolderTree, AlertCircle, Folder, Leaf } from 'lucide-react';
 import type { ICategory } from '../../types';
+import { getApiErrorMessage } from '../../utils/errors';
 
 export default function CategoriesManagePage() {
   const [categories, setCategories] = useState<ICategory[]>([]);
@@ -53,9 +55,9 @@ export default function CategoriesManagePage() {
       });
       setIsAdding(false);
       fetchCategories();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error creating category:', err);
-      setError(err.response?.data?.message || 'Có lỗi xảy ra khi tạo danh mục.');
+      setError(getApiErrorMessage(err, 'Có lỗi xảy ra khi tạo danh mục.'));
     } finally {
       setSubmitting(false);
     }

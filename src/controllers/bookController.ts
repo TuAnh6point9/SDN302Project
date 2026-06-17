@@ -31,7 +31,7 @@ const findBookByIdOrSlug = async (idOrSlug: string) => {
 };
 
 export const getBooks = asyncHandler(async (req: Request, res: Response) => {
-  const { category, search, sort } = req.query;
+  const { category, search, sort, tag, minPrice, maxPrice, inStock, minRating } = req.query;
   const { page, limit, skip } = getPagination(req.query.page, req.query.limit);
 
   const filter: FilterQuery<IBook> = {};
@@ -43,6 +43,29 @@ export const getBooks = asyncHandler(async (req: Request, res: Response) => {
 
   if (search) {
     filter.$text = { $search: String(search) };
+  }
+
+  if (tag) {
+    filter.tags = String(tag);
+  }
+
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    const priceFilter: Record<string, number> = {};
+    if (minPrice !== undefined) priceFilter.$gte = Number(minPrice);
+    if (maxPrice !== undefined) priceFilter.$lte = Number(maxPrice);
+    filter.$or = [
+      { discountPrice: priceFilter },
+      { discountPrice: { $exists: false }, price: priceFilter }
+    ];
+  }
+
+  const shouldFilterInStock = inStock === "true" || String(inStock) === "true";
+  if (shouldFilterInStock) {
+    filter.stockQuantity = { $gt: 0 };
+  }
+
+  if (minRating !== undefined) {
+    filter.ratingAverage = { $gte: Number(minRating) };
   }
 
   const sortMap: Record<string, Record<string, 1 | -1>> = {

@@ -10,9 +10,7 @@ interface BookCardProps {
 
 export default function BookCard({ book }: BookCardProps) {
   const category = typeof book.category === 'object' ? (book.category as ICategory) : null;
-  const coverImage = book.images.length > 0
-    ? `${API_BASE}${book.images[0]}`
-    : null;
+  const coverImage = book.images.length > 0 ? `${API_BASE}${book.images[0]}` : null;
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
@@ -23,7 +21,6 @@ export default function BookCard({ book }: BookCardProps) {
       className="card-hover group flex flex-col h-full"
       id={`book-card-${book.slug}`}
     >
-      {/* Cover Image */}
       <div className="relative aspect-[3/4] bg-gradient-to-br from-primary-light/20 to-primary/10 overflow-hidden">
         {coverImage ? (
           <img
@@ -39,14 +36,12 @@ export default function BookCard({ book }: BookCardProps) {
           </div>
         )}
 
-        {/* Featured badge */}
         {book.isFeatured && (
           <div className="absolute top-3 left-3 px-2.5 py-1 bg-primary text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg">
             Nổi bật
           </div>
         )}
 
-        {/* Category badge */}
         {category && (
           <div className="absolute bottom-3 left-3 badge text-[10px] bg-white/90 backdrop-blur-sm shadow-sm">
             {category.name}
@@ -54,7 +49,6 @@ export default function BookCard({ book }: BookCardProps) {
         )}
       </div>
 
-      {/* Info */}
       <div className="flex flex-col flex-1 p-4 gap-2">
         <h3 className="font-heading font-semibold text-sm text-text line-clamp-2 group-hover:text-primary transition-colors leading-snug">
           {book.title}

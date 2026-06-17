@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable react-hooks/set-state-in-effect */
+import React, { useState, useEffect, useCallback } from 'react';
 import { bookApi } from '../../api/bookApi';
 import { categoryApi } from '../../api/categoryApi';
 import { uploadApi } from '../../api/uploadApi';
 import { Plus, Edit, Trash2, Search, X, Upload, AlertCircle, Award, FileText } from 'lucide-react';
-import type { IBook, ICategory } from '../../types';
+import type { IBook, IBookCreatePayload, ICategory } from '../../types';
+import { getApiErrorMessage } from '../../utils/errors';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -47,7 +49,7 @@ export default function BooksManagePage() {
       .catch(err => console.error('Error fetching categories:', err));
   }, []);
 
-  const fetchBooks = () => {
+  const fetchBooks = useCallback(() => {
     setLoading(true);
     bookApi.getBooks({
       page,
@@ -60,11 +62,11 @@ export default function BooksManagePage() {
       })
       .catch(err => console.error('Error fetching books:', err))
       .finally(() => setLoading(false));
-  };
+  }, [page, searchQuery]);
 
   useEffect(() => {
     fetchBooks();
-  }, [page, searchQuery]);
+  }, [fetchBooks]);
 
   const handleOpenAddModal = () => {
     setEditingBookId(null);
@@ -116,9 +118,9 @@ export default function BooksManagePage() {
     try {
       const url = await uploadApi.uploadBookImage(file);
       setUploadedImages(prev => [...prev, url]);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Image upload failed:', err);
-      setFormError(err.response?.data?.message || 'Không thể upload ảnh bìa.');
+      setFormError(getApiErrorMessage(err, 'Không thể upload ảnh bìa.'));
     } finally {
       setUploadingImage(false);
     }
@@ -133,9 +135,9 @@ export default function BooksManagePage() {
     try {
       await bookApi.deleteBook(id);
       fetchBooks();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Delete failed:', err);
-      alert(err.response?.data?.message || 'Không thể xóa sách.');
+      alert(getApiErrorMessage(err, 'Không thể xóa sách.'));
     }
   };
 
@@ -153,7 +155,7 @@ export default function BooksManagePage() {
       .map(t => t.trim())
       .filter(t => t.length > 0);
 
-    const payload: any = {
+    const payload: IBookCreatePayload = {
       title,
       author,
       publisher: publisher || undefined,
@@ -179,9 +181,9 @@ export default function BooksManagePage() {
       }
       setIsModalOpen(false);
       fetchBooks();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Submit failed:', err);
-      setFormError(err.response?.data?.message || 'Lỗi khi lưu sách. Hãy kiểm tra các trường dữ liệu.');
+      setFormError(getApiErrorMessage(err, 'Lỗi khi lưu sách. Hãy kiểm tra các trường dữ liệu.'));
     } finally {
       setSubmitting(false);
     }

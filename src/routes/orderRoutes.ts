@@ -4,6 +4,7 @@ import {
   getAllOrders,
   getMyOrders,
   getOrderById,
+  payOnlineDemo,
   updateOrderStatus
 } from "../controllers/orderController";
 import { protect, requireAdmin } from "../middlewares/auth";
@@ -22,6 +23,7 @@ router.post("/", validate(createOrderSchema), createOrder);
 router.get("/", getMyOrders);
 router.get("/all", requireAdmin, getAllOrders);
 router.get("/:id", validate(orderParamsSchema), getOrderById);
+router.put("/:id/pay-online-demo", validate(orderParamsSchema), payOnlineDemo);
 router.put(
   "/:id/status",
   requireAdmin,

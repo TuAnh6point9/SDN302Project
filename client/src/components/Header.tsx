@@ -1,15 +1,28 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Search, User, Menu, X, ChevronDown,
-  Leaf, PawPrint, TreePine, LogOut, Settings
+  ChevronDown,
+  ClipboardList,
+  Heart,
+  Leaf,
+  LogOut,
+  Menu,
+  PawPrint,
+  Search,
+  Settings,
+  ShoppingCart,
+  TreePine,
+  User,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
 import { categoryApi } from '../api/categoryApi';
 import type { ICategory } from '../types';
 
 export default function Header() {
   const { user, isAdmin, logout } = useAuth();
+  const { itemCount } = useCart();
   const navigate = useNavigate();
 
   const [categories, setCategories] = useState<ICategory[]>([]);
@@ -26,22 +39,22 @@ export default function Header() {
     categoryApi.getCategories().then(setCategories).catch(console.error);
   }, []);
 
-  // Close dropdowns on outside click
   useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(e.target as Node)) {
+    const handleClick = (event: MouseEvent) => {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
         setIsCategoryDropdownOpen(false);
       }
-      if (accountDropdownRef.current && !accountDropdownRef.current.contains(e.target as Node)) {
+      if (accountDropdownRef.current && !accountDropdownRef.current.contains(event.target as Node)) {
         setIsAccountDropdownOpen(false);
       }
     };
+
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = (event: React.FormEvent) => {
+    event.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/books?search=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery('');
@@ -51,16 +64,23 @@ export default function Header() {
   };
 
   const getCategoryIcon = (name: string) => {
-    if (name.toLowerCase().includes('động vật')) return <PawPrint className="w-4 h-4" />;
-    if (name.toLowerCase().includes('thực vật')) return <TreePine className="w-4 h-4" />;
+    const normalized = name.toLowerCase();
+    if (normalized.includes('động vật')) return <PawPrint className="w-4 h-4" />;
+    if (normalized.includes('thực vật')) return <TreePine className="w-4 h-4" />;
     return <Leaf className="w-4 h-4" />;
+  };
+
+  const handleLogout = () => {
+    logout();
+    setIsAccountDropdownOpen(false);
+    setIsMobileMenuOpen(false);
+    navigate('/');
   };
 
   return (
     <header className="sticky top-0 z-50 glass shadow-sm">
       <div className="page-container">
         <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group" id="header-logo">
             <div className="w-9 h-9 bg-gradient-to-br from-primary to-primary-light rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
               <Leaf className="w-5 h-5 text-white" />
@@ -70,13 +90,11 @@ export default function Header() {
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
             <Link to="/" className="btn-ghost text-sm" id="nav-home">
               Trang chủ
             </Link>
 
-            {/* Category Dropdown */}
             <div ref={categoryDropdownRef} className="relative">
               <button
                 onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
@@ -129,16 +147,14 @@ export default function Header() {
             </Link>
           </nav>
 
-          {/* Right Actions */}
           <div className="hidden md:flex items-center gap-2">
-            {/* Search */}
             <div className="relative">
               {isSearchOpen ? (
                 <form onSubmit={handleSearch} className="flex items-center">
                   <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(event) => setSearchQuery(event.target.value)}
                     placeholder="Tìm sách..."
                     className="input-field !py-2 !pl-10 !pr-4 w-64 text-sm"
                     autoFocus
@@ -164,7 +180,25 @@ export default function Header() {
               )}
             </div>
 
-            {/* Account Dropdown */}
+            {user && !isAdmin && (
+              <>
+                <Link to="/orders" className="btn-ghost !p-2.5" title="Đơn hàng">
+                  <ClipboardList className="w-5 h-5" />
+                </Link>
+                <Link to="/wishlist" className="btn-ghost !p-2.5" title="Sách yêu thích">
+                  <Heart className="w-5 h-5" />
+                </Link>
+                <Link to="/cart" className="btn-ghost !p-2.5 relative" title="Giỏ hàng">
+                  <ShoppingCart className="w-5 h-5" />
+                  {itemCount > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center">
+                      {itemCount}
+                    </span>
+                  )}
+                </Link>
+              </>
+            )}
+
             <div ref={accountDropdownRef} className="relative">
               <button
                 onClick={() => setIsAccountDropdownOpen(!isAccountDropdownOpen)}
@@ -182,9 +216,27 @@ export default function Header() {
                         <p className="text-sm font-medium text-text truncate">{user.name}</p>
                         <p className="text-xs text-text-secondary truncate">{user.email}</p>
                       </div>
+                      <Link
+                        to="/profile"
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-primary-light/5 transition-colors"
+                        onClick={() => setIsAccountDropdownOpen(false)}
+                      >
+                        <User className="w-4 h-4" />
+                        Hồ sơ cá nhân
+                      </Link>
+                      {!isAdmin && (
+                        <Link
+                          to="/wishlist"
+                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-primary-light/5 transition-colors"
+                          onClick={() => setIsAccountDropdownOpen(false)}
+                        >
+                          <Heart className="w-4 h-4" />
+                          Sách yêu thích
+                        </Link>
+                      )}
                       {isAdmin && (
                         <Link
-                          to="/admin/books"
+                          to="/admin/dashboard"
                           className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-primary-light/5 transition-colors"
                           onClick={() => setIsAccountDropdownOpen(false)}
                         >
@@ -193,7 +245,7 @@ export default function Header() {
                         </Link>
                       )}
                       <button
-                        onClick={() => { logout(); setIsAccountDropdownOpen(false); navigate('/'); }}
+                        onClick={handleLogout}
                         className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
@@ -201,21 +253,30 @@ export default function Header() {
                       </button>
                     </>
                   ) : (
-                    <Link
-                      to="/login"
-                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-primary-light/5 transition-colors"
-                      onClick={() => setIsAccountDropdownOpen(false)}
-                    >
-                      <User className="w-4 h-4" />
-                      Đăng nhập (Admin)
-                    </Link>
+                    <>
+                      <Link
+                        to="/login"
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-primary-light/5 transition-colors"
+                        onClick={() => setIsAccountDropdownOpen(false)}
+                      >
+                        <User className="w-4 h-4" />
+                        Đăng nhập
+                      </Link>
+                      <Link
+                        to="/register"
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-primary-light/5 transition-colors"
+                        onClick={() => setIsAccountDropdownOpen(false)}
+                      >
+                        <User className="w-4 h-4" />
+                        Đăng ký
+                      </Link>
+                    </>
                   )}
                 </div>
               )}
             </div>
           </div>
 
-          {/* Mobile Menu Toggle */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="md:hidden btn-ghost !p-2"
@@ -225,15 +286,13 @@ export default function Header() {
           </button>
         </div>
 
-        {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-gray-200 py-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
-            {/* Mobile Search */}
             <form onSubmit={handleSearch} className="relative">
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Tìm sách..."
                 className="input-field !pl-10 text-sm"
                 id="mobile-search-input"
@@ -248,7 +307,6 @@ export default function Header() {
               Tất cả sách
             </Link>
 
-            {/* Mobile Category Tree */}
             {categories.map((root) => (
               <div key={root._id} className="space-y-1">
                 <Link
@@ -275,19 +333,40 @@ export default function Header() {
               {user ? (
                 <>
                   <p className="px-3 text-sm font-medium text-text">{user.name}</p>
+                  <Link to="/profile" className="block px-3 py-2 text-sm text-primary" onClick={() => setIsMobileMenuOpen(false)}>
+                    Hồ sơ cá nhân
+                  </Link>
+                  {!isAdmin && (
+                    <>
+                      <Link to="/wishlist" className="block px-3 py-2 text-sm text-primary" onClick={() => setIsMobileMenuOpen(false)}>
+                        Sách yêu thích
+                      </Link>
+                      <Link to="/orders" className="block px-3 py-2 text-sm text-primary" onClick={() => setIsMobileMenuOpen(false)}>
+                        Đơn hàng của tôi
+                      </Link>
+                      <Link to="/cart" className="block px-3 py-2 text-sm text-primary" onClick={() => setIsMobileMenuOpen(false)}>
+                        Giỏ hàng ({itemCount})
+                      </Link>
+                    </>
+                  )}
                   {isAdmin && (
-                    <Link to="/admin/books" className="block px-3 py-2 text-sm text-primary" onClick={() => setIsMobileMenuOpen(false)}>
+                    <Link to="/admin/dashboard" className="block px-3 py-2 text-sm text-primary" onClick={() => setIsMobileMenuOpen(false)}>
                       Quản lý hệ thống
                     </Link>
                   )}
-                  <button onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="block px-3 py-2 text-sm text-red-500">
+                  <button onClick={handleLogout} className="block px-3 py-2 text-sm text-red-500">
                     Đăng xuất
                   </button>
                 </>
               ) : (
-                <Link to="/login" className="block px-3 py-2 text-sm text-primary font-medium" onClick={() => setIsMobileMenuOpen(false)}>
-                  Đăng nhập (Admin)
-                </Link>
+                <>
+                  <Link to="/login" className="block px-3 py-2 text-sm text-primary font-medium" onClick={() => setIsMobileMenuOpen(false)}>
+                    Đăng nhập
+                  </Link>
+                  <Link to="/register" className="block px-3 py-2 text-sm text-primary font-medium" onClick={() => setIsMobileMenuOpen(false)}>
+                    Đăng ký
+                  </Link>
+                </>
               )}
             </div>
           </div>

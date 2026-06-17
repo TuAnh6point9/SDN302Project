@@ -9,6 +9,9 @@ import cartRoutes from "./routes/cartRoutes";
 import categoryRoutes from "./routes/categoryRoutes";
 import orderRoutes from "./routes/orderRoutes";
 import uploadRoutes from "./routes/uploadRoutes";
+import userRoutes from "./routes/userRoutes";
+import wishlistRoutes from "./routes/wishlistRoutes";
+import voucherRoutes from "./routes/voucherRoutes";
 import { errorHandler, notFound } from "./middlewares/errorHandler";
 
 const app = express();
@@ -29,6 +32,9 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/uploads", uploadRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/vouchers", voucherRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

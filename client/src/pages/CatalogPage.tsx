@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { bookApi } from '../api/bookApi';
@@ -5,8 +6,8 @@ import { categoryApi } from '../api/categoryApi';
 import BookCard from '../components/BookCard';
 import Pagination from '../components/Pagination';
 import CategoryTree from '../components/CategoryTree';
-import { BookOpen, SlidersHorizontal, ArrowUpDown, X, Tag } from 'lucide-react';
-import type { IBook, ICategory } from '../types';
+import { BookOpen, SlidersHorizontal, ArrowUpDown, X, Tag, Star } from 'lucide-react';
+import type { IBook, IBooksQueryParams, ICategory } from '../types';
 
 const PRESET_TAGS = ['Sách hiếm', 'Khám phá', 'Giáo trình', 'Sách ảnh', 'Sinh thái', 'Hướng dẫn'];
 
@@ -22,9 +23,13 @@ export default function CatalogPage() {
   // Parse state from URL params
   const category = searchParams.get('category') || '';
   const search = searchParams.get('search') || '';
-  const sort = searchParams.get('sort') || 'newest';
+  const sort = (searchParams.get('sort') || 'newest') as IBooksQueryParams['sort'];
   const page = parseInt(searchParams.get('page') || '1', 10);
   const selectedTag = searchParams.get('tag') || '';
+  const minPrice = searchParams.get('minPrice') || '';
+  const maxPrice = searchParams.get('maxPrice') || '';
+  const inStock = searchParams.get('inStock') === 'true';
+  const minRating = searchParams.get('minRating') || '';
 
   useEffect(() => {
     categoryApi.getCategories()
@@ -35,22 +40,19 @@ export default function CatalogPage() {
   useEffect(() => {
     setLoading(true);
     // Build params for api call
-    const params: any = {
+    const params: IBooksQueryParams = {
       page,
       limit: 12,
       sort,
     };
 
     if (category) params.category = category;
-    
-    // Combine search query and tag query if selected
-    if (search && selectedTag) {
-      params.search = `${search} ${selectedTag}`;
-    } else if (search) {
-      params.search = search;
-    } else if (selectedTag) {
-      params.search = selectedTag;
-    }
+    if (search) params.search = search;
+    if (selectedTag) params.tag = selectedTag;
+    if (minPrice) params.minPrice = Number(minPrice);
+    if (maxPrice) params.maxPrice = Number(maxPrice);
+    if (inStock) params.inStock = true;
+    if (minRating) params.minRating = Number(minRating);
 
     bookApi.getBooks(params)
       .then(res => {
@@ -59,7 +61,7 @@ export default function CatalogPage() {
       })
       .catch(err => console.error('Error fetching books:', err))
       .finally(() => setLoading(false));
-  }, [category, search, sort, page, selectedTag]);
+  }, [category, search, sort, page, selectedTag, minPrice, maxPrice, inStock, minRating]);
 
   const updateParam = (key: string, value: string | number) => {
     setSearchParams(prev => {
@@ -96,7 +98,7 @@ export default function CatalogPage() {
         </div>
 
         {/* Clear Filters Button (Visible if active filters) */}
-        {(category || search || selectedTag) && (
+        {(category || search || selectedTag || minPrice || maxPrice || inStock || minRating) && (
           <button
             onClick={clearAllFilters}
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors w-fit"
@@ -165,6 +167,56 @@ export default function CatalogPage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-150 p-5 shadow-sm space-y-4">
+            <h3 className="font-heading font-bold text-base text-primary-dark border-b border-gray-100 pb-2">
+              Giá và tình trạng
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="number"
+                min={0}
+                value={minPrice}
+                onChange={(e) => updateParam('minPrice', e.target.value)}
+                placeholder="Giá từ"
+                className="input-field !py-2 text-sm"
+              />
+              <input
+                type="number"
+                min={0}
+                value={maxPrice}
+                onChange={(e) => updateParam('maxPrice', e.target.value)}
+                placeholder="Giá đến"
+                className="input-field !py-2 text-sm"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+              <input
+                type="checkbox"
+                checked={inStock}
+                onChange={(e) => updateParam('inStock', e.target.checked ? 'true' : '')}
+                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              Chỉ hiển thị sách còn hàng
+            </label>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-150 p-5 shadow-sm space-y-4">
+            <h3 className="font-heading font-bold text-base text-primary-dark border-b border-gray-100 pb-2 flex items-center gap-1.5">
+              <Star className="w-4 h-4" /> Đánh giá tối thiểu
+            </h3>
+            <select
+              value={minRating}
+              onChange={(e) => updateParam('minRating', e.target.value)}
+              className="input-field !py-2 text-sm"
+            >
+              <option value="">Tất cả đánh giá</option>
+              <option value="4">Từ 4 sao</option>
+              <option value="3">Từ 3 sao</option>
+              <option value="2">Từ 2 sao</option>
+              <option value="1">Từ 1 sao</option>
+            </select>
           </div>
         </aside>
 
@@ -275,6 +327,48 @@ export default function CatalogPage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="space-y-4 mb-8">
+            <h3 className="font-heading font-semibold text-text border-b border-gray-100 pb-1.5">Giá và tình trạng</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="number"
+                min={0}
+                value={minPrice}
+                onChange={(e) => updateParam('minPrice', e.target.value)}
+                placeholder="Giá từ"
+                className="input-field !py-2 text-sm"
+              />
+              <input
+                type="number"
+                min={0}
+                value={maxPrice}
+                onChange={(e) => updateParam('maxPrice', e.target.value)}
+                placeholder="Giá đến"
+                className="input-field !py-2 text-sm"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-text-secondary">
+              <input
+                type="checkbox"
+                checked={inStock}
+                onChange={(e) => updateParam('inStock', e.target.checked ? 'true' : '')}
+                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              Chỉ hiển thị sách còn hàng
+            </label>
+            <select
+              value={minRating}
+              onChange={(e) => updateParam('minRating', e.target.value)}
+              className="input-field !py-2 text-sm"
+            >
+              <option value="">Tất cả đánh giá</option>
+              <option value="4">Từ 4 sao</option>
+              <option value="3">Từ 3 sao</option>
+              <option value="2">Từ 2 sao</option>
+              <option value="1">Từ 1 sao</option>
+            </select>
           </div>
 
           <button

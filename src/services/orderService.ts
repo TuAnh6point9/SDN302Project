@@ -1,9 +1,11 @@
 import mongoose, { Types } from "mongoose";
 import { Book } from "../models/Book";
 import { Cart } from "../models/Cart";
-import { IShippingAddress, Order } from "../models/Order";
+import { IShippingAddress, PaymentMethod, Order } from "../models/Order";
 import { ApiError } from "../utils/ApiError";
 import { generateOrderCode } from "../utils/orderCode";
+import { Voucher } from "../models/Voucher";
+import { calculateVoucherDiscount } from "./voucherService";
 
 interface CreateOrderItemInput {
   book: string;
@@ -15,6 +17,8 @@ interface CreateOrderInput {
   items?: CreateOrderItemInput[];
   shippingAddress: IShippingAddress;
   shippingFee: number;
+  voucherCode?: string;
+  paymentMethod?: PaymentMethod;
 }
 
 const mergeItems = (items: CreateOrderItemInput[]) => {
@@ -31,7 +35,9 @@ export const createOrderWithStockTransaction = async ({
   userId,
   items,
   shippingAddress,
-  shippingFee
+  shippingFee,
+  voucherCode,
+  paymentMethod = "COD"
 }: CreateOrderInput) => {
   const session = await mongoose.startSession();
 
@@ -81,7 +87,16 @@ export const createOrderWithStockTransaction = async ({
       (sum, item) => sum + item.price * item.quantity,
       0
     );
-    const total = subtotal + shippingFee;
+    const discount = await calculateVoucherDiscount(voucherCode, subtotal, session);
+    const total = subtotal - discount.discountTotal + shippingFee;
+
+    if (discount.voucherCode) {
+      await Voucher.updateOne(
+        { code: discount.voucherCode },
+        { $inc: { usedCount: 1 } },
+        { session }
+      );
+    }
 
     // Order lưu snapshot title/price để lịch sử mua hàng không đổi khi sách cập nhật giá sau này.
     const [order] = await Order.create(
@@ -91,12 +106,20 @@ export const createOrderWithStockTransaction = async ({
           user: userObjectId,
           items: snapshotItems,
           subtotal,
+          discountTotal: discount.discountTotal,
+          voucherCode: discount.voucherCode,
           shippingFee,
           total,
           shippingAddress,
-          paymentMethod: "COD",
+          paymentMethod,
           paymentStatus: "pending",
-          orderStatus: "pending"
+          orderStatus: "pending",
+          statusHistory: [{
+            status: "pending",
+            note: paymentMethod === "ONLINE"
+              ? "Don hang duoc tao va dang cho thanh toan online"
+              : "Don hang duoc tao"
+          }]
         }
       ],
       { session }
