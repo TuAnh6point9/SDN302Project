@@ -28,4 +28,14 @@ export const authApi = {
   }): Promise<void> => {
     await apiClient.put('/api/auth/password', payload);
   },
+
+  forgotPassword: async (email: string): Promise<string> => {
+    const { data } = await apiClient.post('/api/auth/forgot-password', { email });
+    return data.message;
+  },
+
+  resetPassword: async (payload: { token: string; newPassword: string }): Promise<string> => {
+    const { data } = await apiClient.post('/api/auth/reset-password', payload);
+    return data.message;
+  },
 };

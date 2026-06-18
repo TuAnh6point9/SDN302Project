@@ -117,7 +117,7 @@ export const createOrderWithStockTransaction = async ({
           statusHistory: [{
             status: "pending",
             note: paymentMethod === "ONLINE"
-              ? "Don hang duoc tao va dang cho thanh toan online"
+              ? "Don hang duoc tao va dang cho thanh toan VietQR"
               : "Don hang duoc tao"
           }]
         }

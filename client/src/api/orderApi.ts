@@ -1,5 +1,14 @@
 import apiClient from './client';
-import type { ICreateOrderPayload, IOrder, OrderStatus, PaymentStatus } from '../types';
+import type { ICreateOrderPayload, IOrder, OrderStatus, PaymentMethod, PaymentStatus } from '../types';
+
+export interface IAdminOrdersQuery {
+  search?: string;
+  orderStatus?: OrderStatus | 'all';
+  paymentStatus?: PaymentStatus | 'all';
+  paymentMethod?: PaymentMethod | 'all';
+  dateFrom?: string;
+  dateTo?: string;
+}
 
 export const orderApi = {
   createOrder: async (payload: ICreateOrderPayload): Promise<IOrder> => {
@@ -12,18 +21,13 @@ export const orderApi = {
     return data.orders;
   },
 
-  getAllOrders: async (): Promise<IOrder[]> => {
-    const { data } = await apiClient.get('/api/orders/all');
+  getAllOrders: async (params?: IAdminOrdersQuery): Promise<IOrder[]> => {
+    const { data } = await apiClient.get('/api/orders/all', { params });
     return data.orders;
   },
 
   getOrderById: async (id: string): Promise<IOrder> => {
     const { data } = await apiClient.get(`/api/orders/${id}`);
-    return data.order;
-  },
-
-  payOnlineDemo: async (id: string): Promise<IOrder> => {
-    const { data } = await apiClient.put(`/api/orders/${id}/pay-online-demo`);
     return data.order;
   },
 

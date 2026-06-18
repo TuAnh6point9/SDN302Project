@@ -31,7 +31,7 @@ const findBookByIdOrSlug = async (idOrSlug: string) => {
 };
 
 export const getBooks = asyncHandler(async (req: Request, res: Response) => {
-  const { category, search, sort, tag, minPrice, maxPrice, inStock, minRating } = req.query;
+  const { category, search, sort, tag, minPrice, maxPrice, inStock, stockStatus, minRating } = req.query;
   const { page, limit, skip } = getPagination(req.query.page, req.query.limit);
 
   const filter: FilterQuery<IBook> = {};
@@ -62,6 +62,18 @@ export const getBooks = asyncHandler(async (req: Request, res: Response) => {
   const shouldFilterInStock = inStock === "true" || String(inStock) === "true";
   if (shouldFilterInStock) {
     filter.stockQuantity = { $gt: 0 };
+  }
+
+  if (stockStatus === "in_stock") {
+    filter.stockQuantity = { $gt: 0 };
+  }
+
+  if (stockStatus === "low_stock") {
+    filter.stockQuantity = { $gt: 0, $lte: 5 };
+  }
+
+  if (stockStatus === "out_of_stock") {
+    filter.stockQuantity = 0;
   }
 
   if (minRating !== undefined) {

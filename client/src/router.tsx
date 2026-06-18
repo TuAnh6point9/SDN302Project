@@ -1,67 +1,89 @@
+/* eslint-disable react-refresh/only-export-components */
+import { lazy, Suspense, type ReactNode } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import MainLayout from './layouts/MainLayout';
-import AdminLayout from './layouts/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import AuthRequiredRoute from './components/AuthRequiredRoute';
+import PageLoader from './components/PageLoader';
 
-import HomePage from './pages/HomePage';
-import CatalogPage from './pages/CatalogPage';
-import BookDetailPage from './pages/BookDetailPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import CartPage from './pages/CartPage';
-import CheckoutPage from './pages/CheckoutPage';
-import OrdersPage from './pages/OrdersPage';
-import OrderDetailPage from './pages/OrderDetailPage';
-import ProfilePage from './pages/ProfilePage';
-import WishlistPage from './pages/WishlistPage';
+const MainLayout = lazy(() => import('./layouts/MainLayout'));
+const AdminLayout = lazy(() => import('./layouts/AdminLayout'));
 
-import BooksManagePage from './pages/admin/BooksManagePage';
-import CategoriesManagePage from './pages/admin/CategoriesManagePage';
-import OrdersManagePage from './pages/admin/OrdersManagePage';
-import DashboardPage from './pages/admin/DashboardPage';
-import VouchersManagePage from './pages/admin/VouchersManagePage';
-import UsersManagePage from './pages/admin/UsersManagePage';
+const HomePage = lazy(() => import('./pages/HomePage'));
+const CatalogPage = lazy(() => import('./pages/CatalogPage'));
+const BookDetailPage = lazy(() => import('./pages/BookDetailPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
+const CartPage = lazy(() => import('./pages/CartPage'));
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
+const OrdersPage = lazy(() => import('./pages/OrdersPage'));
+const OrderDetailPage = lazy(() => import('./pages/OrderDetailPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const WishlistPage = lazy(() => import('./pages/WishlistPage'));
+
+const BooksManagePage = lazy(() => import('./pages/admin/BooksManagePage'));
+const CategoriesManagePage = lazy(() => import('./pages/admin/CategoriesManagePage'));
+const OrdersManagePage = lazy(() => import('./pages/admin/OrdersManagePage'));
+const DashboardPage = lazy(() => import('./pages/admin/DashboardPage'));
+const VouchersManagePage = lazy(() => import('./pages/admin/VouchersManagePage'));
+const UsersManagePage = lazy(() => import('./pages/admin/UsersManagePage'));
+const ReviewsManagePage = lazy(() => import('./pages/admin/ReviewsManagePage'));
+
+const lazyPage = (element: ReactNode) => (
+  <Suspense fallback={<PageLoader />}>
+    {element}
+  </Suspense>
+);
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <MainLayout />,
+    element: lazyPage(<MainLayout />),
     children: [
-      { index: true, element: <HomePage /> },
-      { path: 'books', element: <CatalogPage /> },
-      { path: 'books/:slug', element: <BookDetailPage /> },
-      { path: 'cart', element: <AuthRequiredRoute><CartPage /></AuthRequiredRoute> },
-      { path: 'checkout', element: <AuthRequiredRoute><CheckoutPage /></AuthRequiredRoute> },
-      { path: 'orders', element: <AuthRequiredRoute><OrdersPage /></AuthRequiredRoute> },
-      { path: 'orders/:id', element: <AuthRequiredRoute><OrderDetailPage /></AuthRequiredRoute> },
-      { path: 'profile', element: <AuthRequiredRoute><ProfilePage /></AuthRequiredRoute> },
-      { path: 'wishlist', element: <AuthRequiredRoute><WishlistPage /></AuthRequiredRoute> },
+      { index: true, element: lazyPage(<HomePage />) },
+      { path: 'books', element: lazyPage(<CatalogPage />) },
+      { path: 'books/:slug', element: lazyPage(<BookDetailPage />) },
+      { path: 'cart', element: lazyPage(<AuthRequiredRoute><CartPage /></AuthRequiredRoute>) },
+      { path: 'checkout', element: lazyPage(<AuthRequiredRoute><CheckoutPage /></AuthRequiredRoute>) },
+      { path: 'orders', element: lazyPage(<AuthRequiredRoute><OrdersPage /></AuthRequiredRoute>) },
+      { path: 'orders/:id', element: lazyPage(<AuthRequiredRoute><OrderDetailPage /></AuthRequiredRoute>) },
+      { path: 'profile', element: lazyPage(<AuthRequiredRoute><ProfilePage /></AuthRequiredRoute>) },
+      { path: 'wishlist', element: lazyPage(<AuthRequiredRoute><WishlistPage /></AuthRequiredRoute>) },
     ],
   },
   {
     path: 'login',
-    element: <LoginPage />,
+    element: lazyPage(<LoginPage />),
   },
   {
     path: 'register',
-    element: <RegisterPage />,
+    element: lazyPage(<RegisterPage />),
+  },
+  {
+    path: 'forgot-password',
+    element: lazyPage(<ForgotPasswordPage />),
+  },
+  {
+    path: 'reset-password',
+    element: lazyPage(<ResetPasswordPage />),
   },
   {
     path: 'admin',
-    element: (
+    element: lazyPage(
       <ProtectedRoute>
         <AdminLayout />
       </ProtectedRoute>
     ),
     children: [
       { index: true, element: <Navigate to="/admin/dashboard" replace /> },
-      { path: 'dashboard', element: <DashboardPage /> },
-      { path: 'books', element: <BooksManagePage /> },
-      { path: 'categories', element: <CategoriesManagePage /> },
-      { path: 'orders', element: <OrdersManagePage /> },
-      { path: 'vouchers', element: <VouchersManagePage /> },
-      { path: 'users', element: <UsersManagePage /> },
+      { path: 'dashboard', element: lazyPage(<DashboardPage />) },
+      { path: 'books', element: lazyPage(<BooksManagePage />) },
+      { path: 'categories', element: lazyPage(<CategoriesManagePage />) },
+      { path: 'orders', element: lazyPage(<OrdersManagePage />) },
+      { path: 'vouchers', element: lazyPage(<VouchersManagePage />) },
+      { path: 'reviews', element: lazyPage(<ReviewsManagePage />) },
+      { path: 'users', element: lazyPage(<UsersManagePage />) },
     ],
   },
   {

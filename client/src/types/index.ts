@@ -184,6 +184,18 @@ export interface ICreateOrderPayload {
   paymentMethod?: PaymentMethod;
 }
 
+export interface IPaymentTransaction {
+  id: string;
+  provider: 'payos';
+  providerOrderCode: number;
+  paymentLinkId?: string;
+  checkoutUrl?: string;
+  qrCode?: string;
+  amount: number;
+  description: string;
+  status: 'PENDING' | 'PAID' | 'CANCELLED' | 'FAILED';
+}
+
 export type VoucherType = 'percent' | 'fixed';
 
 export interface IVoucher {
@@ -205,7 +217,7 @@ export interface IVoucher {
 export interface IReview {
   _id: string;
   user: Pick<IUser, '_id' | 'name' | 'avatar'>;
-  book: string;
+  book: string | Pick<IBook, '_id' | 'title' | 'slug'>;
   rating: number;
   comment?: string;
   createdAt: string;
@@ -235,6 +247,7 @@ export interface IBooksQueryParams {
   minPrice?: number;
   maxPrice?: number;
   inStock?: boolean;
+  stockStatus?: 'all' | 'in_stock' | 'low_stock' | 'out_of_stock';
   minRating?: number;
   sort?: 'newest' | 'price_asc' | 'price_desc' | 'featured';
 }

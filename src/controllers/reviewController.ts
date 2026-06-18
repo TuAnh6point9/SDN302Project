@@ -60,3 +60,23 @@ export const getBookReviews = asyncHandler(
     res.json({ reviews });
   }
 );
+
+export const getAllReviews = asyncHandler(async (_req: Request, res: Response) => {
+  const reviews = await Review.find()
+    .populate("user", "name email avatar")
+    .populate("book", "title slug")
+    .sort({ createdAt: -1 });
+
+  res.json({ reviews });
+});
+
+export const deleteReview = asyncHandler(async (req: Request, res: Response) => {
+  const review = await Review.findByIdAndDelete(req.params.reviewId);
+
+  if (!review) {
+    throw new ApiError(404, "Khong tim thay danh gia");
+  }
+
+  await refreshBookRating(String(review.book));
+  res.json({ message: "Da xoa danh gia" });
+});

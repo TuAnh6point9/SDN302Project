@@ -20,6 +20,8 @@ export interface IUser extends Document {
   addresses: IUserAddress[];
   wishlist: Types.ObjectId[];
   avatar?: string;
+  resetPasswordTokenHash?: string;
+  resetPasswordExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -56,7 +58,9 @@ const userSchema = new Schema<IUser>(
     phone: { type: String, trim: true },
     addresses: { type: [addressSchema], default: [] },
     wishlist: { type: [Schema.Types.ObjectId], ref: "Book", default: [] },
-    avatar: { type: String, trim: true }
+    avatar: { type: String, trim: true },
+    resetPasswordTokenHash: { type: String, select: false },
+    resetPasswordExpires: { type: Date, select: false }
   },
   {
     timestamps: true,

@@ -464,7 +464,7 @@ const seedOrders = async (
       paymentStatus: "pending",
       orderStatus: "pending",
       statusHistory: [
-        { status: "pending", note: "Đơn hàng online demo đang chờ thanh toán" }
+        { status: "pending", note: "Đơn hàng VietQR đang chờ thanh toán" }
       ]
     },
     {

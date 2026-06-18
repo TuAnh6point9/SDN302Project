@@ -1,6 +1,8 @@
 import apiClient from './client';
 import type { IVoucher } from '../types';
 
+export type IVoucherPayload = Omit<IVoucher, '_id' | 'usedCount' | 'createdAt' | 'updatedAt'>;
+
 export const voucherApi = {
   validate: async (
     code: string,
@@ -17,8 +19,13 @@ export const voucherApi = {
     return data.vouchers;
   },
 
-  createVoucher: async (payload: Omit<IVoucher, '_id' | 'usedCount' | 'createdAt' | 'updatedAt'>): Promise<IVoucher> => {
+  createVoucher: async (payload: IVoucherPayload): Promise<IVoucher> => {
     const { data } = await apiClient.post('/api/vouchers', payload);
+    return data.voucher;
+  },
+
+  updateVoucher: async (code: string, payload: Partial<IVoucherPayload>): Promise<IVoucher> => {
+    const { data } = await apiClient.put(`/api/vouchers/${code}`, payload);
     return data.voucher;
   },
 };

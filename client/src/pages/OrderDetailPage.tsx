@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, ClipboardList, CreditCard, MapPin, Timer } from 'lucide-react';
 import { orderApi } from '../api/orderApi';
+import { paymentApi } from '../api/paymentApi';
 import type { IOrder, OrderStatus } from '../types';
 import { getApiErrorMessage } from '../utils/errors';
 
@@ -57,14 +58,19 @@ export default function OrderDetailPage() {
     && order.paymentStatus === 'pending'
     && order.orderStatus !== 'cancelled';
 
-  const handlePayOnlineDemo = async () => {
+  const handlePayOnline = async () => {
     setPaying(true);
     setError('');
     try {
-      const updated = await orderApi.payOnlineDemo(order._id);
-      setOrder(updated);
+      const { order: updatedOrder, payment } = await paymentApi.createPayosPayment(order._id);
+      setOrder(updatedOrder);
+      if (payment.checkoutUrl) {
+        window.location.href = payment.checkoutUrl;
+      } else {
+        setError('Không nhận được link thanh toán payOS.');
+      }
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, 'Không thể thanh toán online.'));
+      setError(getApiErrorMessage(err, 'Không thể tạo thanh toán payOS.'));
     } finally {
       setPaying(false);
     }
@@ -178,14 +184,14 @@ export default function OrderDetailPage() {
               <button
                 type="button"
                 disabled={paying}
-                onClick={() => void handlePayOnlineDemo()}
+                onClick={() => void handlePayOnline()}
                 className="btn-primary w-full disabled:opacity-60"
               >
                 {paying ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
                 ) : (
                   <>
-                    <CreditCard className="w-5 h-5" /> Thanh toán online demo
+                    <CreditCard className="w-5 h-5" /> Thanh toán VietQR
                   </>
                 )}
               </button>

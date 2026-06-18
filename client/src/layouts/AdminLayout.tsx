@@ -9,6 +9,7 @@ import {
   Leaf,
   LogOut,
   Menu,
+  MessageSquare,
   TicketPercent,
   Users,
   X,
@@ -21,6 +22,7 @@ const sidebarLinks = [
   { to: '/admin/categories', label: 'Quản lý danh mục', icon: FolderTree },
   { to: '/admin/orders', label: 'Quản lý đơn hàng', icon: ClipboardList },
   { to: '/admin/vouchers', label: 'Quản lý voucher', icon: TicketPercent },
+  { to: '/admin/reviews', label: 'Quản lý đánh giá', icon: MessageSquare },
   { to: '/admin/users', label: 'Quản lý người dùng', icon: Users },
 ];
 

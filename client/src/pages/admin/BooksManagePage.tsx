@@ -14,6 +14,7 @@ export default function BooksManagePage() {
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [stockStatus, setStockStatus] = useState<'all' | 'in_stock' | 'low_stock' | 'out_of_stock'>('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -54,7 +55,8 @@ export default function BooksManagePage() {
     bookApi.getBooks({
       page,
       limit: 8,
-      search: searchQuery
+      search: searchQuery,
+      stockStatus,
     })
       .then(res => {
         setBooks(res.books);
@@ -62,7 +64,7 @@ export default function BooksManagePage() {
       })
       .catch(err => console.error('Error fetching books:', err))
       .finally(() => setLoading(false));
-  }, [page, searchQuery]);
+  }, [page, searchQuery, stockStatus]);
 
   useEffect(() => {
     fetchBooks();
@@ -220,6 +222,19 @@ export default function BooksManagePage() {
           />
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         </div>
+        <select
+          value={stockStatus}
+          onChange={(e) => {
+            setStockStatus(e.target.value as 'all' | 'in_stock' | 'low_stock' | 'out_of_stock');
+            setPage(1);
+          }}
+          className="input-field !py-2.5 text-sm md:max-w-56"
+        >
+          <option value="all">Tất cả tồn kho</option>
+          <option value="in_stock">Còn hàng</option>
+          <option value="low_stock">Sắp hết hàng</option>
+          <option value="out_of_stock">Hết hàng</option>
+        </select>
       </div>
 
       {/* Book table list */}

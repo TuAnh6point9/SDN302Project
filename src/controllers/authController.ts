@@ -1,7 +1,10 @@
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { Request, Response } from "express";
+import { env } from "../config/env";
 import { IUserAddress } from "../models/User";
 import { User } from "../models/User";
+import { sendPasswordResetEmail } from "../services/emailService";
 import { ApiError } from "../utils/ApiError";
 import { asyncHandler } from "../utils/asyncHandler";
 import { signToken } from "../utils/jwt";
@@ -109,4 +112,43 @@ export const changePassword = asyncHandler(async (req: Request, res: Response) =
   await user.save();
 
   res.json({ message: "Da doi mat khau" });
+});
+
+export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+  const user = await User.findOne({ email: req.body.email });
+
+  if (user) {
+    const token = crypto.randomBytes(32).toString("hex");
+    user.resetPasswordTokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    user.resetPasswordExpires = new Date(Date.now() + 30 * 60 * 1000);
+    await user.save();
+
+    const resetUrl = `${env.clientUrl}/reset-password?token=${token}`;
+    sendPasswordResetEmail(user.email, resetUrl).catch((error) => {
+      console.error("Password reset email failed", error);
+    });
+  }
+
+  res.json({
+    message: "Neu email ton tai, he thong se gui lien ket dat lai mat khau"
+  });
+});
+
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  const tokenHash = crypto.createHash("sha256").update(req.body.token).digest("hex");
+  const user = await User.findOne({
+    resetPasswordTokenHash: tokenHash,
+    resetPasswordExpires: { $gt: new Date() }
+  }).select("+passwordHash +resetPasswordTokenHash +resetPasswordExpires");
+
+  if (!user) {
+    throw new ApiError(400, "Lien ket dat lai mat khau khong hop le hoac da het han");
+  }
+
+  user.passwordHash = await bcrypt.hash(req.body.newPassword, 12);
+  user.resetPasswordTokenHash = undefined;
+  user.resetPasswordExpires = undefined;
+  await user.save();
+
+  res.json({ message: "Da dat lai mat khau" });
 });

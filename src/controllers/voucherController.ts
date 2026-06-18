@@ -20,14 +20,25 @@ export const createVoucher = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const updateVoucher = asyncHandler(async (req: Request, res: Response) => {
+  const update: Record<string, unknown> = { ...req.body };
+
+  if (req.body.code) {
+    update.code = req.body.code.toUpperCase();
+  } else {
+    delete update.code;
+  }
+
+  if (req.body.startsAt) {
+    update.startsAt = new Date(req.body.startsAt);
+  }
+
+  if (req.body.expiresAt) {
+    update.expiresAt = new Date(req.body.expiresAt);
+  }
+
   const voucher = await Voucher.findOneAndUpdate(
     { code: req.params.code.toUpperCase() },
-    {
-      ...req.body,
-      code: req.body.code ? req.body.code.toUpperCase() : undefined,
-      startsAt: req.body.startsAt ? new Date(req.body.startsAt) : undefined,
-      expiresAt: req.body.expiresAt ? new Date(req.body.expiresAt) : undefined
-    },
+    update,
     { new: true, runValidators: true }
   );
 

@@ -53,6 +53,19 @@ export const changePasswordSchema = z.object({
   })
 });
 
+export const forgotPasswordSchema = z.object({
+  body: z.object({
+    email: z.string().trim().email().toLowerCase()
+  })
+});
+
+export const resetPasswordSchema = z.object({
+  body: z.object({
+    token: z.string().trim().min(20),
+    newPassword: z.string().min(8)
+  })
+});
+
 export const userParamsSchema = z.object({
   params: z.object({ id: objectId })
 });
@@ -86,6 +99,7 @@ export const listBooksSchema = z.object({
     minPrice: z.coerce.number().min(0).optional(),
     maxPrice: z.coerce.number().min(0).optional(),
     inStock: queryBoolean.optional(),
+    stockStatus: z.enum(["all", "in_stock", "low_stock", "out_of_stock"]).optional(),
     minRating: z.coerce.number().min(0).max(5).optional(),
     sort: z
       .enum(["newest", "price_asc", "price_desc", "featured"])
@@ -206,6 +220,23 @@ export const orderParamsSchema = z.object({
   params: z.object({ id: objectId })
 });
 
+export const payosOrderParamsSchema = z.object({
+  params: z.object({ orderId: objectId })
+});
+
+export const listAdminOrdersSchema = z.object({
+  query: z.object({
+    search: z.string().trim().optional(),
+    orderStatus: z
+      .enum(["pending", "confirmed", "shipping", "delivered", "cancelled", "all"])
+      .optional(),
+    paymentStatus: z.enum(["pending", "paid", "failed", "all"]).optional(),
+    paymentMethod: z.enum(["COD", "ONLINE", "all"]).optional(),
+    dateFrom: z.string().trim().optional(),
+    dateTo: z.string().trim().optional()
+  })
+});
+
 export const updateOrderStatusSchema = z.object({
   params: z.object({ id: objectId }),
   body: z.object({
@@ -232,4 +263,8 @@ export const createReviewSchema = z.object({
 
 export const listReviewsSchema = z.object({
   params: z.object({ id: objectId })
+});
+
+export const reviewParamsSchema = z.object({
+  params: z.object({ reviewId: objectId })
 });

@@ -65,6 +65,11 @@ export default function LoginPage() {
               <label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-text-secondary">
                 Địa chỉ Email
               </label>
+              <div className="text-right">
+                <Link to="/forgot-password" className="text-xs font-semibold text-primary hover:text-primary-dark">
+                  Quên mật khẩu?
+                </Link>
+              </div>
               <div className="relative">
                 <input
                   id="email"

@@ -132,7 +132,7 @@ export default function CheckoutPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { value: 'COD' as PaymentMethod, label: 'Thanh toán khi nhận hàng', desc: 'Khách trả tiền trực tiếp khi nhận sách' },
-                { value: 'ONLINE' as PaymentMethod, label: 'Thanh toán online demo', desc: 'Tạo đơn chờ thanh toán và xác nhận demo sau' },
+                { value: 'ONLINE' as PaymentMethod, label: 'VietQR qua payOS', desc: 'Quét VietQR và hệ thống tự xác nhận qua webhook' },
               ].map((method) => (
                 <label
                   key={method.value}
