@@ -6,8 +6,7 @@ import { uploadApi } from '../../api/uploadApi';
 import { Plus, Edit, Trash2, Search, X, Upload, AlertCircle, Award, FileText, Download } from 'lucide-react';
 import type { IBook, IBookCreatePayload, ICategory } from '../../types';
 import { getApiErrorMessage } from '../../utils/errors';
-
-const API_BASE = import.meta.env.VITE_API_URL || '';
+import { resolveAssetUrl } from '../../utils/assetUrl';
 
 export default function BooksManagePage() {
   const [books, setBooks] = useState<IBook[]>([]);
@@ -322,7 +321,7 @@ export default function BooksManagePage() {
               </thead>
               <tbody className="divide-y divide-gray-150 text-sm">
                 {books.map(book => {
-                  const coverImage = book.images.length > 0 ? `${API_BASE}${book.images[0]}` : null;
+                  const coverImage = resolveAssetUrl(book.images[0]);
                   const cat = typeof book.category === 'object' ? (book.category as ICategory) : null;
                   return (
                     <tr key={book._id} className="hover:bg-gray-50/50 transition-colors">
@@ -608,7 +607,7 @@ export default function BooksManagePage() {
                   {/* Render uploaded image previews */}
                   {uploadedImages.map((imgUrl, idx) => (
                     <div key={idx} className="relative w-24 h-32 rounded-xl overflow-hidden group border border-gray-200">
-                      <img src={`${API_BASE}${imgUrl}`} alt="Book preview" className="w-full h-full object-cover" />
+                      <img src={resolveAssetUrl(imgUrl) || ''} alt="Book preview" className="w-full h-full object-cover" />
                       <button
                         type="button"
                         onClick={() => handleRemoveImage(idx)}

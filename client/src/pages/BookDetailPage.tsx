@@ -10,8 +10,7 @@ import { ArrowLeft, BookOpen, Calendar, Globe, Hash, FileText, Star, Award, Chev
 import type { IBook, ICategory } from '../types';
 import type { IReview } from '../types';
 import { getApiErrorMessage } from '../utils/errors';
-
-const API_BASE = import.meta.env.VITE_API_URL || '';
+import { resolveAssetUrl } from '../utils/assetUrl';
 
 export default function BookDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -73,7 +72,7 @@ export default function BookDetailPage() {
   }
 
   const category = typeof book.category === 'object' ? (book.category as ICategory) : null;
-  const coverImage = book.images.length > 0 ? `${API_BASE}${book.images[0]}` : null;
+  const coverImage = resolveAssetUrl(book.images[0]);
   const formattedPrice = book.price > 0
     ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(book.price)
     : 'Liên hệ';

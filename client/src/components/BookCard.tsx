@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom';
 import { BookOpen } from 'lucide-react';
 import type { IBook, ICategory } from '../types';
-
-const API_BASE = import.meta.env.VITE_API_URL || '';
+import { resolveAssetUrl } from '../utils/assetUrl';
 
 interface BookCardProps {
   book: IBook;
@@ -10,7 +9,7 @@ interface BookCardProps {
 
 export default function BookCard({ book }: BookCardProps) {
   const category = typeof book.category === 'object' ? (book.category as ICategory) : null;
-  const coverImage = book.images.length > 0 ? `${API_BASE}${book.images[0]}` : null;
+  const coverImage = resolveAssetUrl(book.images[0]);
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);

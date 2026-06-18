@@ -184,7 +184,7 @@ const demoBooks = [
     pages: 240,
     publishedYear: 2025,
     isbn: "9786040000019",
-    image: "https://images.unsplash.com/photo-1569163139394-de4e4f43e4e3?auto=format&fit=crop&w=900&q=80"
+    image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80"
   },
   {
     title: "Nghệ thuật chăm sóc bonsai",

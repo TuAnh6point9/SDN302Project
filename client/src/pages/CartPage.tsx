@@ -1,8 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
-
-const API_BASE = import.meta.env.VITE_API_URL || '';
+import { resolveAssetUrl } from '../utils/assetUrl';
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
@@ -40,7 +39,7 @@ export default function CartPage() {
           <div className="lg:col-span-8 bg-white rounded-3xl border border-gray-100 shadow-sm divide-y divide-gray-100">
             {items.map((item) => {
               const book = item.book;
-              const coverImage = book.images.length > 0 ? `${API_BASE}${book.images[0]}` : null;
+              const coverImage = resolveAssetUrl(book.images[0]);
               const itemPrice = book.discountPrice ?? book.price;
 
               return (
