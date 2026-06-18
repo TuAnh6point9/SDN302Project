@@ -6,6 +6,8 @@ import { ApiError } from "../utils/ApiError";
 import { asyncHandler } from "../utils/asyncHandler";
 import { createOrderWithStockTransaction } from "../services/orderService";
 import { sendOrderCreatedEmail, sendOrderStatusEmail } from "../services/emailService";
+import { createNotification, notifyAdmins } from "../services/notificationService";
+import { InventoryMovement } from "../models/InventoryMovement";
 
 export const createOrder = asyncHandler(async (req: Request, res: Response) => {
   const order = await createOrderWithStockTransaction({
@@ -21,6 +23,20 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
   sendOrderCreatedEmail(order).catch((error) => {
     console.error("Order email failed", error);
   });
+  createNotification({
+    user: req.user!._id,
+    audience: "user",
+    type: "order",
+    title: "Đơn hàng đã được tạo",
+    message: `Đơn ${order.orderCode} đã được ghi nhận.`,
+    link: `/orders/${order._id}`
+  }).catch(console.error);
+  notifyAdmins(
+    "order",
+    "Có đơn hàng mới",
+    `Đơn ${order.orderCode} cần được xử lý.`,
+    "/admin/orders"
+  ).catch(console.error);
 
   res.status(201).json({ order });
 });
@@ -107,12 +123,27 @@ export const updateOrderStatus = asyncHandler(
 
     if (order.orderStatus !== "cancelled" && req.body.orderStatus === "cancelled") {
       await Promise.all(
-        order.items.map((item) =>
-          Book.updateOne(
+        order.items.map(async (item) => {
+          const book = await Book.findOneAndUpdate(
             { _id: item.book },
-            { $inc: { stockQuantity: item.quantity } }
-          )
-        )
+            { $inc: { stockQuantity: item.quantity } },
+            { new: true }
+          );
+
+          if (!book) {
+            return;
+          }
+
+          await InventoryMovement.create({
+            book: item.book,
+            type: "return",
+            quantityChange: item.quantity,
+            quantityBefore: book.stockQuantity - item.quantity,
+            quantityAfter: book.stockQuantity,
+            note: `Cancelled order ${order.orderCode}`,
+            createdBy: req.user!._id
+          });
+        })
       );
     }
 
@@ -139,6 +170,14 @@ export const updateOrderStatus = asyncHandler(
     sendOrderStatusEmail(order).catch((error) => {
       console.error("Order status email failed", error);
     });
+    createNotification({
+      user: order.user._id,
+      audience: "user",
+      type: "order",
+      title: "Đơn hàng đã được cập nhật",
+      message: `Đơn ${order.orderCode} hiện ở trạng thái ${order.orderStatus}.`,
+      link: `/orders/${order._id}`
+    }).catch(console.error);
     res.json({ order });
   }
 );

@@ -134,6 +134,12 @@ const bookPayload = z.object({
 
 export const createBookSchema = z.object({ body: bookPayload });
 
+export const importBooksCsvSchema = z.object({
+  body: z.object({
+    csv: z.string().min(10)
+  })
+});
+
 export const updateBookSchema = z.object({
   params: z.object({ id: idOrSlug }),
   body: bookPayload.partial().refine((value) => Object.keys(value).length > 0, {
@@ -267,4 +273,23 @@ export const listReviewsSchema = z.object({
 
 export const reviewParamsSchema = z.object({
   params: z.object({ reviewId: objectId })
+});
+
+export const inventoryBookParamsSchema = z.object({
+  params: z.object({ bookId: objectId })
+});
+
+export const adjustInventorySchema = z.object({
+  body: z.object({
+    mode: z.enum(["set", "change"]),
+    type: z.enum(["import", "adjustment", "return"]).default("adjustment"),
+    quantity: z.number().int().min(0).optional(),
+    quantityChange: z.number().int().optional(),
+    note: z.string().trim().max(500).optional()
+  }).refine((value) => {
+    if (value.mode === "set") return value.quantity !== undefined;
+    return value.quantityChange !== undefined && value.quantityChange !== 0;
+  }, {
+    message: "Thong tin dieu chinh ton kho khong hop le"
+  })
 });

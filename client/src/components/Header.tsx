@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
+  Bell,
   ChevronDown,
   ClipboardList,
   Heart,
@@ -18,6 +19,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { categoryApi } from '../api/categoryApi';
+import { notificationApi } from '../api/notificationApi';
 import type { ICategory } from '../types';
 
 export default function Header() {
@@ -31,6 +33,7 @@ export default function Header() {
   const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const accountDropdownRef = useRef<HTMLDivElement>(null);
@@ -38,6 +41,17 @@ export default function Header() {
   useEffect(() => {
     categoryApi.getCategories().then(setCategories).catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    notificationApi
+      .getNotifications()
+      .then((data) => setUnreadCount(data.unreadCount))
+      .catch(console.error);
+  }, [user]);
 
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
@@ -180,6 +194,17 @@ export default function Header() {
               )}
             </div>
 
+            {user && (
+              <Link to="/notifications" className="btn-ghost !p-2.5 relative" title="Thông báo">
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </Link>
+            )}
+
             {user && !isAdmin && (
               <>
                 <Link to="/orders" className="btn-ghost !p-2.5" title="Đơn hàng">
@@ -223,6 +248,14 @@ export default function Header() {
                       >
                         <User className="w-4 h-4" />
                         Hồ sơ cá nhân
+                      </Link>
+                      <Link
+                        to="/notifications"
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-primary-light/5 transition-colors"
+                        onClick={() => setIsAccountDropdownOpen(false)}
+                      >
+                        <Bell className="w-4 h-4" />
+                        Thông báo {unreadCount > 0 ? `(${unreadCount})` : ''}
                       </Link>
                       {!isAdmin && (
                         <Link
@@ -335,6 +368,9 @@ export default function Header() {
                   <p className="px-3 text-sm font-medium text-text">{user.name}</p>
                   <Link to="/profile" className="block px-3 py-2 text-sm text-primary" onClick={() => setIsMobileMenuOpen(false)}>
                     Hồ sơ cá nhân
+                  </Link>
+                  <Link to="/notifications" className="block px-3 py-2 text-sm text-primary" onClick={() => setIsMobileMenuOpen(false)}>
+                    Thông báo {unreadCount > 0 ? `(${unreadCount})` : ''}
                   </Link>
                   {!isAdmin && (
                     <>

@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Outlet, Link, NavLink, useNavigate } from 'react-router-dom';
 import {
   BarChart3,
+  Bell,
   BookOpen,
+  Boxes,
   ClipboardList,
   FolderTree,
   Home,
@@ -15,15 +17,18 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import RouteTitle from '../components/RouteTitle';
 
 const sidebarLinks = [
   { to: '/admin/dashboard', label: 'Tổng quan', icon: BarChart3 },
   { to: '/admin/books', label: 'Quản lý sách', icon: BookOpen },
   { to: '/admin/categories', label: 'Quản lý danh mục', icon: FolderTree },
   { to: '/admin/orders', label: 'Quản lý đơn hàng', icon: ClipboardList },
+  { to: '/admin/inventory', label: 'Quản lý tồn kho', icon: Boxes },
   { to: '/admin/vouchers', label: 'Quản lý voucher', icon: TicketPercent },
   { to: '/admin/reviews', label: 'Quản lý đánh giá', icon: MessageSquare },
   { to: '/admin/users', label: 'Quản lý người dùng', icon: Users },
+  { to: '/notifications', label: 'Thông báo', icon: Bell },
 ];
 
 export default function AdminLayout() {
@@ -38,6 +43,7 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      <RouteTitle />
       {isSidebarOpen && (
         <div
           className="fixed inset-0 bg-black/30 z-40 lg:hidden"
@@ -62,7 +68,7 @@ export default function AdminLayout() {
           </button>
         </div>
 
-        <nav className="flex-1 py-4 px-3 space-y-1">
+        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
           {sidebarLinks.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}

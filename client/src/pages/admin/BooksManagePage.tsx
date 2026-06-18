@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { bookApi } from '../../api/bookApi';
 import { categoryApi } from '../../api/categoryApi';
 import { uploadApi } from '../../api/uploadApi';
-import { Plus, Edit, Trash2, Search, X, Upload, AlertCircle, Award, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, X, Upload, AlertCircle, Award, FileText, Download } from 'lucide-react';
 import type { IBook, IBookCreatePayload, ICategory } from '../../types';
 import { getApiErrorMessage } from '../../utils/errors';
 
@@ -40,6 +40,8 @@ export default function BooksManagePage() {
   const [isFeatured, setIsFeatured] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [importingCsv, setImportingCsv] = useState(false);
+  const [csvMessage, setCsvMessage] = useState('');
 
   useEffect(() => {
     // Fetch categories for dropdown (flatten list to child categories only)
@@ -143,6 +145,42 @@ export default function BooksManagePage() {
     }
   };
 
+  const handleExportCsv = async () => {
+    setCsvMessage('');
+    try {
+      const blob = await bookApi.exportCsv();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `books-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: unknown) {
+      setCsvMessage(getApiErrorMessage(err, 'Không thể xuất file CSV.'));
+    }
+  };
+
+  const handleImportCsv = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setImportingCsv(true);
+    setCsvMessage('');
+    try {
+      const csv = await file.text();
+      const result = await bookApi.importCsv(csv);
+      setCsvMessage(`Đã nhập ${result.importedCount} sách. ${result.errors.length ? `${result.errors.length} dòng lỗi.` : ''}`);
+      fetchBooks();
+    } catch (err: unknown) {
+      setCsvMessage(getApiErrorMessage(err, 'Không thể nhập file CSV.'));
+    } finally {
+      setImportingCsv(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
@@ -199,13 +237,38 @@ export default function BooksManagePage() {
           <h2 className="text-xl font-bold font-heading text-text">Quản Lý Trưng Bày Sách</h2>
           <p className="text-xs text-text-secondary">Thêm mới, chỉnh sửa thông tin sách</p>
         </div>
-        <button
-          onClick={handleOpenAddModal}
-          className="btn-primary inline-flex items-center gap-1.5 self-start sm:self-auto !py-2.5"
-        >
-          <Plus className="w-4 h-4" /> Thêm sách mới
-        </button>
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            className="btn-ghost inline-flex items-center gap-1.5 !py-2.5"
+          >
+            <Download className="w-4 h-4" /> Xuất CSV
+          </button>
+          <label className="btn-ghost inline-flex items-center gap-1.5 !py-2.5 cursor-pointer">
+            <Upload className="w-4 h-4" /> {importingCsv ? 'Đang nhập...' : 'Nhập CSV'}
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              onChange={handleImportCsv}
+              className="hidden"
+              disabled={importingCsv}
+            />
+          </label>
+          <button
+            onClick={handleOpenAddModal}
+            className="btn-primary inline-flex items-center gap-1.5 !py-2.5"
+          >
+            <Plus className="w-4 h-4" /> Thêm sách mới
+          </button>
+        </div>
       </div>
+
+      {csvMessage && (
+        <div className="bg-blue-50 border border-blue-100 text-blue-700 px-4 py-3 rounded-2xl text-sm">
+          {csvMessage}
+        </div>
+      )}
 
       {/* Filter and Search Toolbar */}
       <div className="bg-white border border-gray-200/60 p-4 rounded-2xl shadow-sm flex flex-col md:flex-row gap-4">

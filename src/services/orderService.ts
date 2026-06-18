@@ -6,6 +6,7 @@ import { ApiError } from "../utils/ApiError";
 import { generateOrderCode } from "../utils/orderCode";
 import { Voucher } from "../models/Voucher";
 import { calculateVoucherDiscount } from "./voucherService";
+import { InventoryMovement } from "../models/InventoryMovement";
 
 interface CreateOrderItemInput {
   book: string;
@@ -61,6 +62,7 @@ export const createOrderWithStockTransaction = async ({
 
     const normalizedItems = mergeItems(orderItemsInput);
     const snapshotItems = [];
+    const orderCode = generateOrderCode();
 
     for (const item of normalizedItems) {
       // Điều kiện stockQuantity >= quantity giúp tránh oversell khi nhiều request chạy đồng thời.
@@ -75,12 +77,27 @@ export const createOrderWithStockTransaction = async ({
       }
 
       const price = book.discountPrice ?? book.price;
+      const quantityBefore = book.stockQuantity + item.quantity;
       snapshotItems.push({
         book: book._id,
         title: book.title,
         price,
         quantity: item.quantity
       });
+
+      await InventoryMovement.create(
+        [
+          {
+            book: book._id,
+            type: "sale",
+            quantityChange: -item.quantity,
+            quantityBefore,
+            quantityAfter: book.stockQuantity,
+            note: `Order ${orderCode}`
+          }
+        ],
+        { session }
+      );
     }
 
     const subtotal = snapshotItems.reduce(
@@ -102,7 +119,7 @@ export const createOrderWithStockTransaction = async ({
     const [order] = await Order.create(
       [
         {
-          orderCode: generateOrderCode(),
+          orderCode,
           user: userObjectId,
           items: snapshotItems,
           subtotal,

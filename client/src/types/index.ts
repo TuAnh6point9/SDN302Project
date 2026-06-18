@@ -224,6 +224,31 @@ export interface IReview {
   updatedAt: string;
 }
 
+export interface INotification {
+  _id: string;
+  audience: 'user' | 'admin';
+  type: 'order' | 'payment' | 'inventory' | 'system';
+  title: string;
+  message: string;
+  link?: string;
+  readAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IInventoryMovement {
+  _id: string;
+  book: Pick<IBook, '_id' | 'title' | 'slug' | 'stockQuantity'> | string;
+  type: 'import' | 'adjustment' | 'sale' | 'return';
+  quantityChange: number;
+  quantityBefore: number;
+  quantityAfter: number;
+  note?: string;
+  createdBy?: Pick<IUser, '_id' | 'name' | 'email'>;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ─── Pagination ──────────────────────────────────────────────────────────────
 
 export interface IPagination {

@@ -9,6 +9,8 @@ import authRoutes from "./routes/authRoutes";
 import bookRoutes from "./routes/bookRoutes";
 import cartRoutes from "./routes/cartRoutes";
 import categoryRoutes from "./routes/categoryRoutes";
+import inventoryRoutes from "./routes/inventoryRoutes";
+import notificationRoutes from "./routes/notificationRoutes";
 import orderRoutes from "./routes/orderRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
 import reviewRoutes from "./routes/reviewRoutes";
@@ -17,6 +19,7 @@ import userRoutes from "./routes/userRoutes";
 import wishlistRoutes from "./routes/wishlistRoutes";
 import voucherRoutes from "./routes/voucherRoutes";
 import { errorHandler, notFound } from "./middlewares/errorHandler";
+import { requestId } from "./middlewares/requestId";
 
 const app = express();
 
@@ -29,9 +32,11 @@ app.use(helmet({
 }));
 app.use(compression());
 app.use(cors({ origin: env.clientUrl, credentials: true }));
+app.use(requestId);
+morgan.token("id", (req) => String(req.headers["x-request-id"] ?? "-"));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
-app.use(morgan(env.nodeEnv === "production" ? "combined" : "dev"));
+app.use(morgan(env.nodeEnv === "production" ? ":id :method :url :status :response-time ms" : "dev"));
 app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
 app.get("/health", (_req, res) => {
@@ -42,6 +47,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/cart", cartRoutes);
+app.use("/api/inventory", inventoryRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/reviews", reviewRoutes);

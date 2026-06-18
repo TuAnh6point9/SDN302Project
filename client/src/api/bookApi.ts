@@ -25,4 +25,16 @@ export const bookApi = {
   deleteBook: async (id: string): Promise<void> => {
     await apiClient.delete(`/api/books/${id}`);
   },
+
+  exportCsv: async (): Promise<Blob> => {
+    const { data } = await apiClient.get('/api/books/admin/export', {
+      responseType: 'blob',
+    });
+    return data;
+  },
+
+  importCsv: async (csv: string): Promise<{ importedCount: number; imported: string[]; errors: string[] }> => {
+    const { data } = await apiClient.post('/api/books/admin/import', { csv });
+    return data;
+  },
 };

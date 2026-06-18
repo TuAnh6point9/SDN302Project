@@ -5,6 +5,7 @@ import { Order } from "../models/Order";
 import { PaymentTransaction } from "../models/PaymentTransaction";
 import { ApiError } from "../utils/ApiError";
 import { sendPaymentSuccessEmail } from "./emailService";
+import { createNotification, notifyAdmins } from "./notificationService";
 
 interface PayosCreateResponse {
   code: string;
@@ -242,6 +243,20 @@ export const handlePayosWebhook = async (body: PayosWebhookBody) => {
       sendPaymentSuccessEmail(order).catch((error) => {
         console.error("Payment email failed", error);
       });
+      createNotification({
+        user: order.user,
+        audience: "user",
+        type: "payment",
+        title: "Thanh toán thành công",
+        message: `Đơn ${order.orderCode} đã được xác nhận thanh toán.`,
+        link: `/orders/${order._id}`
+      }).catch(console.error);
+      notifyAdmins(
+        "payment",
+        "Thanh toán VietQR thành công",
+        `Đơn ${order.orderCode} đã được payOS xác nhận thanh toán.`,
+        "/admin/orders"
+      ).catch(console.error);
     }
   } else if (transaction.status !== "PAID") {
     transaction.status = "FAILED";
