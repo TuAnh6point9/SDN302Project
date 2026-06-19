@@ -12,6 +12,7 @@ interface AuthContextType {
   updateProfile: (payload: IUpdateProfilePayload) => Promise<IUser>;
   changePassword: (payload: { currentPassword: string; newPassword: string }) => Promise<void>;
   logout: () => void;
+  loginWithToken: (token: string, user: IUser) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -87,8 +88,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const loginWithToken = useCallback((token: string, loggedInUser: IUser) => {
+    localStorage.setItem('greenleaf_token', token);
+    localStorage.setItem('greenleaf_user', JSON.stringify(loggedInUser));
+    setUser(loggedInUser);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAdmin, login, register, updateProfile, changePassword, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, isAdmin, login, register, updateProfile, changePassword, logout, loginWithToken }}>
       {children}
     </AuthContext.Provider>
   );

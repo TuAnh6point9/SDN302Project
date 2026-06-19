@@ -28,5 +28,8 @@ export const env = {
   smtpUser: process.env.SMTP_USER,
   smtpPass: process.env.SMTP_PASS,
   mailFrom: process.env.MAIL_FROM ?? "GreenLeaf Books <no-reply@greenleaf.local>",
-  adminEmail: process.env.ADMIN_EMAIL
+  adminEmail: process.env.ADMIN_EMAIL,
+  googleClientId: process.env.GOOGLE_CLIENT_ID,
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  googleCallbackUrl: process.env.GOOGLE_CALLBACK_URL ?? "http://localhost:5000/api/auth/google/callback"
 };

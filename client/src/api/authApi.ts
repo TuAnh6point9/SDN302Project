@@ -38,4 +38,14 @@ export const authApi = {
     const { data } = await apiClient.post('/api/auth/reset-password', payload);
     return data.message;
   },
+
+  verifyGoogleOtp: async (payload: { email: string; otp: string }): Promise<IAuthResponse> => {
+    const { data } = await apiClient.post('/api/auth/google/verify-otp', payload);
+    return data;
+  },
+
+  resendGoogleOtp: async (email: string): Promise<{ message: string }> => {
+    const { data } = await apiClient.post('/api/auth/google/resend-otp', { email });
+    return data;
+  },
 };

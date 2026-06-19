@@ -311,103 +311,201 @@ export default function Header() {
           </div>
 
           <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            onClick={() => setIsMobileMenuOpen(true)}
             className="md:hidden btn-ghost !p-2"
             id="mobile-menu-toggle"
           >
-            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            <Menu className="w-6 h-6" />
           </button>
         </div>
+      </div>
 
-        {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 py-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
+      {/* Mobile Drawer Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs transition-opacity duration-300 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile Drawer Panel */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-y-0 right-0 z-50 w-full max-w-xs bg-white p-6 shadow-2xl flex flex-col animate-slide-in md:hidden"
+        >
+          <div className="flex items-center justify-between border-b border-gray-150 pb-4 mb-4">
+            <Link to="/" className="flex items-center gap-2 group" onClick={() => setIsMobileMenuOpen(false)}>
+              <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary-light rounded-lg flex items-center justify-center">
+                <Leaf className="w-4.5 h-4.5 text-white" />
+              </div>
+              <span className="font-heading font-bold text-base text-primary-dark">
+                GreenLeaf <span className="text-primary">Books</span>
+              </span>
+            </Link>
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-1.5 hover:bg-gray-100 rounded-lg text-text-secondary transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto space-y-5 pr-1 pb-4">
             <form onSubmit={handleSearch} className="relative">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Tìm sách..."
-                className="input-field !pl-10 text-sm"
+                className="input-field !py-2.5 !pl-10 text-sm"
                 id="mobile-search-input"
               />
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             </form>
 
-            <Link to="/" className="block px-3 py-2 text-sm font-medium rounded-xl hover:bg-primary-light/10" onClick={() => setIsMobileMenuOpen(false)}>
-              Trang chủ
-            </Link>
-            <Link to="/books" className="block px-3 py-2 text-sm font-medium rounded-xl hover:bg-primary-light/10" onClick={() => setIsMobileMenuOpen(false)}>
-              Tất cả sách
-            </Link>
+            <div className="space-y-1.5">
+              <Link
+                to="/"
+                className="block px-3 py-2 text-sm font-semibold rounded-xl text-text hover:bg-primary-light/10 hover:text-primary transition-all"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Trang chủ
+              </Link>
+              <Link
+                to="/books"
+                className="block px-3 py-2 text-sm font-semibold rounded-xl text-text hover:bg-primary-light/10 hover:text-primary transition-all"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Tất cả sách
+              </Link>
+            </div>
 
-            {categories.map((root) => (
-              <div key={root._id} className="space-y-1">
-                <Link
-                  to={`/books?category=${root.slug}`}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-xl hover:bg-primary-light/10"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {getCategoryIcon(root.name)} {root.name}
-                </Link>
-                {root.children?.map((child) => (
+            <div className="space-y-2.5 border-t border-gray-100 pt-3.5">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-text-secondary/50 px-3">Danh mục</h4>
+              {categories.map((root) => (
+                <div key={root._id} className="space-y-1.5">
                   <Link
-                    key={child._id}
-                    to={`/books?category=${child.slug}`}
-                    className="block pl-9 pr-3 py-1.5 text-sm text-text-secondary hover:text-primary"
+                    to={`/books?category=${root.slug}`}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold rounded-xl text-text hover:bg-primary-light/10 hover:text-primary transition-all"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    {child.name}
+                    {getCategoryIcon(root.name)} {root.name}
                   </Link>
-                ))}
-              </div>
-            ))}
+                  <div className="border-l border-gray-150 ml-5 pl-2.5 space-y-1">
+                    {root.children?.map((child) => (
+                      <Link
+                        key={child._id}
+                        to={`/books?category=${child.slug}`}
+                        className="block px-3 py-1 text-xs text-text-secondary hover:text-primary hover:bg-primary-light/5 rounded-lg transition-all"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        {child.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
 
-            <div className="border-t border-gray-200 pt-3">
+            <div className="border-t border-gray-100 pt-3.5 space-y-1.5">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-text-secondary/50 px-3 mb-2.5">Tài khoản</h4>
               {user ? (
                 <>
-                  <p className="px-3 text-sm font-medium text-text">{user.name}</p>
-                  <Link to="/profile" className="block px-3 py-2 text-sm text-primary" onClick={() => setIsMobileMenuOpen(false)}>
-                    Hồ sơ cá nhân
+                  <div className="px-3 py-2 bg-gray-50 rounded-xl mb-2.5">
+                    <p className="text-xs font-semibold text-text truncate">{user.name}</p>
+                    <p className="text-[10px] text-text-secondary truncate">{user.email}</p>
+                  </div>
+                  <Link
+                    to="/profile"
+                    className="flex items-center gap-2 px-3 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-primary-light/5 rounded-xl transition-all"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <User className="w-4 h-4" /> Hồ sơ cá nhân
                   </Link>
-                  <Link to="/notifications" className="block px-3 py-2 text-sm text-primary" onClick={() => setIsMobileMenuOpen(false)}>
-                    Thông báo {unreadCount > 0 ? `(${unreadCount})` : ''}
+                  <Link
+                    to="/notifications"
+                    className="flex items-center justify-between px-3 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-primary-light/5 rounded-xl transition-all"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Bell className="w-4 h-4" /> Thông báo
+                    </span>
+                    {unreadCount > 0 && (
+                      <span className="px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[9px] font-bold">
+                        {unreadCount}
+                      </span>
+                    )}
                   </Link>
                   {!isAdmin && (
                     <>
-                      <Link to="/wishlist" className="block px-3 py-2 text-sm text-primary" onClick={() => setIsMobileMenuOpen(false)}>
-                        Sách yêu thích
+                      <Link
+                        to="/wishlist"
+                        className="flex items-center gap-2 px-3 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-primary-light/5 rounded-xl transition-all"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <Heart className="w-4 h-4" /> Sách yêu thích
                       </Link>
-                      <Link to="/orders" className="block px-3 py-2 text-sm text-primary" onClick={() => setIsMobileMenuOpen(false)}>
-                        Đơn hàng của tôi
+                      <Link
+                        to="/orders"
+                        className="flex items-center gap-2 px-3 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-primary-light/5 rounded-xl transition-all"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <ClipboardList className="w-4 h-4" /> Đơn hàng của tôi
                       </Link>
-                      <Link to="/cart" className="block px-3 py-2 text-sm text-primary" onClick={() => setIsMobileMenuOpen(false)}>
-                        Giỏ hàng ({itemCount})
+                      <Link
+                        to="/cart"
+                        className="flex items-center justify-between px-3 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-primary-light/5 rounded-xl transition-all"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <span className="flex items-center gap-2">
+                          <ShoppingCart className="w-4 h-4" /> Giỏ hàng
+                        </span>
+                        {itemCount > 0 && (
+                          <span className="px-1.5 py-0.5 rounded-full bg-primary text-white text-[9px] font-bold">
+                            {itemCount}
+                          </span>
+                        )}
                       </Link>
                     </>
                   )}
                   {isAdmin && (
-                    <Link to="/admin/dashboard" className="block px-3 py-2 text-sm text-primary" onClick={() => setIsMobileMenuOpen(false)}>
-                      Quản lý hệ thống
-                    </Link>
-                  )}
-                  <button onClick={handleLogout} className="block px-3 py-2 text-sm text-red-500">
-                    Đăng xuất
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link to="/login" className="block px-3 py-2 text-sm text-primary font-medium" onClick={() => setIsMobileMenuOpen(false)}>
-                    Đăng nhập
+                    <Link
+                      to="/admin/dashboard"
+                      className="flex items-center gap-2 px-3 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-primary-light/5 rounded-xl transition-all"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <Settings className="w-4 h-4" /> Quản lý hệ thống
                   </Link>
-                  <Link to="/register" className="block px-3 py-2 text-sm text-primary font-medium" onClick={() => setIsMobileMenuOpen(false)}>
-                    Đăng ký
-                  </Link>
-                </>
-              )}
-            </div>
+                )}
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                >
+                  <LogOut className="w-4 h-4" /> Đăng xuất
+                </button>
+              </>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 px-3 py-1">
+                <Link
+                  to="/login"
+                  className="btn-outline !py-2.5 !px-3 text-xs text-center border-2 border-primary rounded-xl"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Đăng nhập
+                </Link>
+                <Link
+                  to="/register"
+                  className="btn-primary !py-2.5 !px-3 text-xs text-center rounded-xl"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Đăng ký
+                </Link>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
-    </header>
-  );
+    )}
+  </header>
+);
 }

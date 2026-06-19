@@ -15,6 +15,8 @@ const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
+const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'));
+const VerifyOtpPage = lazy(() => import('./pages/VerifyOtpPage'));
 const CartPage = lazy(() => import('./pages/CartPage'));
 const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
 const OrdersPage = lazy(() => import('./pages/OrdersPage'));
@@ -70,6 +72,14 @@ export const router = createBrowserRouter([
   {
     path: 'reset-password',
     element: lazyPage(<ResetPasswordPage />),
+  },
+  {
+    path: 'auth-callback',
+    element: lazyPage(<AuthCallbackPage />),
+  },
+  {
+    path: 'verify-otp',
+    element: lazyPage(<VerifyOtpPage />),
   },
   {
     path: 'admin',

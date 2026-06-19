@@ -4,12 +4,24 @@ import { useSearchParams } from 'react-router-dom';
 import { bookApi } from '../api/bookApi';
 import { categoryApi } from '../api/categoryApi';
 import BookCard from '../components/BookCard';
+import BookCardSkeleton from '../components/BookCardSkeleton';
 import Pagination from '../components/Pagination';
 import CategoryTree from '../components/CategoryTree';
 import { BookOpen, SlidersHorizontal, ArrowUpDown, X, Tag, Star } from 'lucide-react';
 import type { IBook, IBooksQueryParams, ICategory } from '../types';
 
 const PRESET_TAGS = ['Sách hiếm', 'Khám phá', 'Giáo trình', 'Sách ảnh', 'Sinh thái', 'Hướng dẫn'];
+
+const findCategoryBySlug = (slug: string, catList: ICategory[]): ICategory | null => {
+  for (const cat of catList) {
+    if (cat.slug === slug) return cat;
+    if (cat.children && cat.children.length > 0) {
+      const found = findCategoryBySlug(slug, cat.children as unknown as ICategory[]);
+      if (found) return found;
+    }
+  }
+  return null;
+};
 
 export default function CatalogPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -84,29 +96,64 @@ export default function CatalogPage() {
     setShowMobileFilters(false);
   };
 
+  const activeCategory = category ? findCategoryBySlug(category, categories) : null;
+
   return (
     <div className="page-container py-8 space-y-6">
-      {/* Title / Info Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 pb-4">
-        <div>
-          <h1 className="text-3xl font-bold font-heading text-text">
-            {search ? `Kết quả tìm kiếm cho "${search}"` : 'Trưng Bày Sách'}
-          </h1>
-          <p className="text-text-secondary text-sm mt-1">
-            Không gian giới thiệu và tìm hiểu thông tin đa dạng các loài
-          </p>
+      {/* Title / Info Bar or Category Banner */}
+      {activeCategory ? (
+        <div className="relative rounded-3xl overflow-hidden shadow-md py-10 px-8 text-white min-h-[160px] flex flex-col justify-center">
+          {activeCategory.image ? (
+            <img
+              src={activeCategory.image}
+              alt={activeCategory.name}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-r from-primary-dark to-primary" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/20" />
+          
+          <div className="relative z-10 space-y-2 max-w-2xl">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-primary-light bg-white/10 px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-md">Danh mục</span>
+              {(category || search || selectedTag || minPrice || maxPrice || inStock || minRating) && (
+                <button
+                  onClick={clearAllFilters}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-red-300 hover:text-red-100 bg-red-950/20 hover:bg-red-900/30 px-2 py-0.5 rounded-lg border border-red-500/20 backdrop-blur-sm transition-colors"
+                >
+                  Xóa bộ lọc
+                </button>
+              )}
+            </div>
+            <h1 className="text-3xl font-bold font-heading">{activeCategory.name}</h1>
+            <p className="text-white/80 text-sm leading-relaxed">
+              {activeCategory.description || 'Khám phá các cuốn sách thuộc chủ đề này.'}
+            </p>
+          </div>
         </div>
+      ) : (
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 pb-4">
+          <div>
+            <h1 className="text-3xl font-bold font-heading text-text">
+              {search ? `Kết quả tìm kiếm cho "${search}"` : 'Trưng Bày Sách'}
+            </h1>
+            <p className="text-text-secondary text-sm mt-1">
+              Không gian giới thiệu và tìm hiểu thông tin đa dạng các loài
+            </p>
+          </div>
 
-        {/* Clear Filters Button (Visible if active filters) */}
-        {(category || search || selectedTag || minPrice || maxPrice || inStock || minRating) && (
-          <button
-            onClick={clearAllFilters}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors w-fit"
-          >
-            <X className="w-3.5 h-3.5" /> Xóa bộ lọc
-          </button>
-        )}
-      </div>
+          {/* Clear Filters Button (Visible if active filters) */}
+          {(category || search || selectedTag || minPrice || maxPrice || inStock || minRating) && (
+            <button
+              onClick={clearAllFilters}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors w-fit"
+            >
+              <X className="w-3.5 h-3.5" /> Xóa bộ lọc
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Main Catalog Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -246,7 +293,7 @@ export default function CatalogPage() {
           {loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-6">
               {[...Array(8)].map((_, i) => (
-                <div key={i} className="card animate-pulse aspect-[3/4] bg-gray-200 rounded-2xl" />
+                <BookCardSkeleton key={i} />
               ))}
             </div>
           ) : books.length > 0 ? (

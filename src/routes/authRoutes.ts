@@ -6,7 +6,11 @@ import {
   login,
   register,
   resetPassword,
-  updateMe
+  updateMe,
+  googleLoginRedirect,
+  googleLoginCallback,
+  verifyGoogleOtp,
+  resendGoogleOtp
 } from "../controllers/authController";
 import { protect } from "../middlewares/auth";
 import { authRateLimiter } from "../middlewares/rateLimiters";
@@ -29,5 +33,11 @@ router.post("/reset-password", authRateLimiter, validate(resetPasswordSchema), r
 router.get("/me", protect, getMe);
 router.put("/me", protect, validate(updateProfileSchema), updateMe);
 router.put("/password", protect, validate(changePasswordSchema), changePassword);
+
+// Google OAuth 2.0 & OTP Verification
+router.get("/google", googleLoginRedirect);
+router.get("/google/callback", googleLoginCallback);
+router.post("/google/verify-otp", authRateLimiter, verifyGoogleOtp);
+router.post("/google/resend-otp", authRateLimiter, resendGoogleOtp);
 
 export default router;
