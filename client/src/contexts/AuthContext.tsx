@@ -89,7 +89,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     localStorage.removeItem('greenleaf_token');
     localStorage.removeItem('greenleaf_user');
+    sessionStorage.clear();
     setUser(null);
+    window.location.href = '/';
   }, []);
 
   const loginWithToken = useCallback((token: string, loggedInUser: IUser) => {

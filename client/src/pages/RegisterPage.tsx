@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Leaf, Lock, Mail, Phone, User } from 'lucide-react';
+import { ArrowLeft, Leaf, Lock, Mail, Phone, User, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { getApiErrorMessage } from '../utils/errors';
@@ -14,7 +14,65 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [touched, setTouched] = useState<{
+    name?: boolean;
+    email?: boolean;
+    phone?: boolean;
+    password?: boolean;
+    confirmPassword?: boolean;
+  }>({});
+
+  const getFieldError = (field: string, val: string): string => {
+    switch (field) {
+      case 'name':
+        if (!val) return 'Họ và tên không được để trống';
+        if (val.trim().length === 0) return 'Họ và tên không được chỉ chứa khoảng trắng';
+        if (val.trim().length < 2) return 'Họ và tên phải có ít nhất 2 ký tự';
+        return '';
+      case 'email':
+        if (!val) return 'Email không được để trống';
+        if (!/\S+@\S+\.\S+/.test(val)) return 'Email không đúng định dạng';
+        if (!val.toLowerCase().endsWith('@gmail.com')) {
+          return 'Email phải có định dạng abc@gmail.com';
+        }
+        return '';
+      case 'phone':
+        if (val && val.length < 10) return 'Số điện thoại phải có ít nhất 10 số';
+        return '';
+      case 'password':
+        if (!val) return 'Mật khẩu không được để trống';
+        if (val.length < 8) return 'Mật khẩu phải chứa ít nhất 8 ký tự';
+        if (!/[A-Z]/.test(val)) return 'Mật khẩu phải chứa ít nhất 1 chữ hoa';
+        if (!/[a-z]/.test(val)) return 'Mật khẩu phải chứa ít nhất 1 chữ thường';
+        if (!/[0-9]/.test(val)) return 'Mật khẩu phải chứa ít nhất 1 chữ số';
+        return '';
+      case 'confirmPassword':
+        if (!val) return 'Vui lòng xác nhận mật khẩu';
+        if (val !== password) return 'Mật khẩu xác nhận không trùng khớp';
+        return '';
+      default:
+        return '';
+    }
+  };
+
+  const errors: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    password?: string;
+    confirmPassword?: string;
+  } = {};
+
+  if (touched.name) errors.name = getFieldError('name', name) || undefined;
+  if (touched.email) errors.email = getFieldError('email', email) || undefined;
+  if (touched.phone) errors.phone = getFieldError('phone', phone) || undefined;
+  if (touched.password) errors.password = getFieldError('password', password) || undefined;
+  if (touched.confirmPassword) errors.confirmPassword = getFieldError('confirmPassword', confirmPassword) || undefined;
 
   const handleGoogleLogin = () => {
     const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -23,6 +81,26 @@ export default function RegisterPage() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    setTouched({
+      name: true,
+      email: true,
+      phone: true,
+      password: true,
+      confirmPassword: true,
+    });
+
+    const nameErr = getFieldError('name', name);
+    const emailErr = getFieldError('email', email);
+    const phoneErr = getFieldError('phone', phone);
+    const passErr = getFieldError('password', password);
+    const confirmPassErr = getFieldError('confirmPassword', confirmPassword);
+
+    if (nameErr || emailErr || phoneErr || passErr || confirmPassErr) {
+      showToast('Vui lòng sửa các lỗi trong biểu mẫu trước khi gửi.', 'error');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -66,59 +144,132 @@ export default function RegisterPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="bg-white py-8 px-6 shadow-xl rounded-3xl border border-gray-100 sm:px-10">
-          <form className="space-y-5" onSubmit={handleSubmit}>
+          <form className="space-y-5" onSubmit={handleSubmit} noValidate>
 
-            <div className="relative">
-              <input
-                type="text"
-                required
-                minLength={2}
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="Họ và tên"
-                className="input-field !pl-11"
-                disabled={loading}
-              />
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            {/* Name */}
+            <div className="space-y-1">
+              <div className="relative">
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  onBlur={() => setTouched(prev => ({ ...prev, name: true }))}
+                  placeholder="Họ và tên"
+                  className={`input-field !pl-11 ${errors.name ? 'border-red-500 focus:ring-red-100 focus:border-red-500' : ''}`}
+                  disabled={loading}
+                />
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              </div>
+              {errors.name && (
+                <p className="text-red-500 text-xs font-semibold pl-1 animate-in fade-in duration-200">
+                  {errors.name}
+                </p>
+              )}
             </div>
 
-            <div className="relative">
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="Email"
-                className="input-field !pl-11"
-                disabled={loading}
-              />
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            {/* Email */}
+            <div className="space-y-1">
+              <div className="relative">
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
+                  placeholder="Email"
+                  className={`input-field !pl-11 ${errors.email ? 'border-red-500 focus:ring-red-100 focus:border-red-500' : ''}`}
+                  disabled={loading}
+                />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              </div>
+              {errors.email && (
+                <p className="text-red-500 text-xs font-semibold pl-1 animate-in fade-in duration-200">
+                  {errors.email}
+                </p>
+              )}
             </div>
 
-            <div className="relative">
-              <input
-                type="tel"
-                value={phone}
-                onChange={(event) => setPhone(event.target.value)}
-                placeholder="Số điện thoại"
-                className="input-field !pl-11"
-                disabled={loading}
-              />
-              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            {/* Phone */}
+            <div className="space-y-1">
+              <div className="relative">
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(event) => {
+                    const cleanPhone = event.target.value.replace(/\D/g, '');
+                    setPhone(cleanPhone);
+                  }}
+                  onBlur={() => setTouched(prev => ({ ...prev, phone: true }))}
+                  placeholder="Số điện thoại"
+                  className={`input-field !pl-11 ${errors.phone ? 'border-red-500 focus:ring-red-100 focus:border-red-500' : ''}`}
+                  disabled={loading}
+                />
+                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              </div>
+              {errors.phone && (
+                <p className="text-red-500 text-xs font-semibold pl-1 animate-in fade-in duration-200">
+                  {errors.phone}
+                </p>
+              )}
             </div>
 
-            <div className="relative">
-              <input
-                type="password"
-                required
-                minLength={8}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Mật khẩu tối thiểu 8 ký tự"
-                className="input-field !pl-11"
-                disabled={loading}
-              />
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            {/* Password */}
+            <div className="space-y-1">
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
+                  placeholder="Mật khẩu"
+                  className={`input-field !pl-11 !pr-10 ${errors.password ? 'border-red-500 focus:ring-red-100 focus:border-red-500' : ''}`}
+                  disabled={loading}
+                />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                >
+                  {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-red-500 text-xs font-semibold pl-1 animate-in fade-in duration-200">
+                  {errors.password}
+                </p>
+              )}
+            </div>
+
+            {/* Confirm Password */}
+            <div className="space-y-1">
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  required
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  onBlur={() => setTouched(prev => ({ ...prev, confirmPassword: true }))}
+                  placeholder="Xác nhận mật khẩu"
+                  className={`input-field !pl-11 !pr-10 ${errors.confirmPassword ? 'border-red-500 focus:ring-red-100 focus:border-red-500' : ''}`}
+                  disabled={loading}
+                />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                </button>
+              </div>
+              {errors.confirmPassword && (
+                <p className="text-red-500 text-xs font-semibold pl-1 animate-in fade-in duration-200">
+                  {errors.confirmPassword}
+                </p>
+              )}
             </div>
 
             <button type="submit" disabled={loading} className="btn-primary w-full shadow-lg shadow-primary/20">

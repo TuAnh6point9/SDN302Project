@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { Leaf, Lock, Mail, ArrowLeft } from 'lucide-react';
+import { Leaf, Lock, Mail, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { getApiErrorMessage } from '../utils/errors';
 
 export default function LoginPage() {
@@ -15,6 +15,38 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const [touched, setTouched] = useState<{ email?: boolean; password?: boolean }>({});
+
+  const getFieldError = (field: string, val: string): string => {
+    switch (field) {
+      case 'email':
+        if (!val) return 'Email không được để trống';
+        if (!/\S+@\S+\.\S+/.test(val)) return 'Email không đúng định dạng';
+        if (!val.toLowerCase().endsWith('@gmail.com') && !val.toLowerCase().endsWith('@greenleaf.test')) {
+          return 'Email phải có định dạng abc@gmail.com';
+        }
+        return '';
+      case 'password':
+        if (!val) return 'Mật khẩu không được để trống';
+        if (val.length < 8) return 'Mật khẩu phải chứa ít nhất 8 ký tự';
+        if (!/[A-Z]/.test(val)) return 'Mật khẩu phải chứa ít nhất 1 chữ hoa';
+        if (!/[a-z]/.test(val)) return 'Mật khẩu phải chứa ít nhất 1 chữ thường';
+        if (!/[0-9]/.test(val)) return 'Mật khẩu phải chứa ít nhất 1 chữ số';
+        return '';
+      default:
+        return '';
+    }
+  };
+
+  const errors: { email?: string; password?: string } = {};
+  if (touched.email) {
+    errors.email = getFieldError('email', email) || undefined;
+  }
+  if (touched.password) {
+    errors.password = getFieldError('password', password) || undefined;
+  }
 
   useEffect(() => {
     const errorParam = searchParams.get('error');
@@ -30,6 +62,16 @@ export default function LoginPage() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    setTouched({ email: true, password: true });
+    const emailErr = getFieldError('email', email);
+    const passwordErr = getFieldError('password', password);
+
+    if (emailErr || passwordErr) {
+      showToast('Vui lòng sửa các lỗi trước khi đăng nhập.', 'error');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -67,13 +109,13 @@ export default function LoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="bg-white py-8 px-6 shadow-xl rounded-3xl border border-gray-100 sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-6" onSubmit={handleSubmit} noValidate>
 
             <div className="space-y-2">
-              <label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-text-secondary">
-                Địa chỉ Email
-              </label>
-              <div className="text-right">
+              <div className="flex justify-between items-center">
+                <label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-text-secondary">
+                  Địa chỉ Email
+                </label>
                 <Link to="/forgot-password" className="text-xs font-semibold text-primary hover:text-primary-dark">
                   Quên mật khẩu?
                 </Link>
@@ -86,12 +128,18 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
+                  onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
                   placeholder="you@example.com"
-                  className="input-field !pl-11"
+                  className={`input-field !pl-11 ${errors.email ? 'border-red-500 focus:ring-red-100 focus:border-red-500' : ''}`}
                   disabled={loading}
                 />
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               </div>
+              {errors.email && (
+                <p className="text-red-500 text-xs font-semibold pl-1 animate-in fade-in duration-200">
+                  {errors.email}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -102,16 +150,29 @@ export default function LoginPage() {
                 <input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
+                  onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
                   placeholder="••••••••"
-                  className="input-field !pl-11"
+                  className={`input-field !pl-11 !pr-10 ${errors.password ? 'border-red-500 focus:ring-red-100 focus:border-red-500' : ''}`}
                   disabled={loading}
                 />
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                >
+                  {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                </button>
               </div>
+              {errors.password && (
+                <p className="text-red-500 text-xs font-semibold pl-1 animate-in fade-in duration-200">
+                  {errors.password}
+                </p>
+              )}
             </div>
 
             <button type="submit" disabled={loading} className="btn-primary w-full shadow-lg shadow-primary/20">
