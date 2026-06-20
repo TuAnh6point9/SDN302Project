@@ -12,6 +12,8 @@ export default function TopLoadingBar() {
     
     // Track API requests
     let apiLoadingCount = 0;
+    let transitionTimer: NodeJS.Timeout | null = null;
+    let hideTimer: NodeJS.Timeout | null = null;
     
     const handleApiStart = () => {
       apiLoadingCount++;
@@ -24,7 +26,7 @@ export default function TopLoadingBar() {
       apiLoadingCount = Math.max(0, apiLoadingCount - 1);
       if (apiLoadingCount === 0) {
         setProgress(100);
-        setTimeout(() => {
+        hideTimer = setTimeout(() => {
           setActive(false);
           setProgress(0);
         }, 300);
@@ -35,22 +37,27 @@ export default function TopLoadingBar() {
     window.addEventListener('api-loading-end', handleApiEnd);
 
     if (isNavigating) {
-      setActive(true);
-      setProgress((prev) => Math.min(prev + 10, 80));
+      transitionTimer = setTimeout(() => {
+        setActive(true);
+        setProgress((prev) => Math.min(prev + 10, 80));
+      }, 0);
     } else {
       if (apiLoadingCount === 0) {
-        setProgress(100);
-        const timer = setTimeout(() => {
-          setActive(false);
-          setProgress(0);
-        }, 300);
-        return () => clearTimeout(timer);
+        transitionTimer = setTimeout(() => {
+          setProgress(100);
+          hideTimer = setTimeout(() => {
+            setActive(false);
+            setProgress(0);
+          }, 300);
+        }, 0);
       }
     }
 
     return () => {
       window.removeEventListener('api-loading-start', handleApiStart);
       window.removeEventListener('api-loading-end', handleApiEnd);
+      if (transitionTimer) clearTimeout(transitionTimer);
+      if (hideTimer) clearTimeout(hideTimer);
     };
   }, [navigation.state]);
 
