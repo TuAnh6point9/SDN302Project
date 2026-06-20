@@ -12,8 +12,8 @@ export default function TopLoadingBar() {
     
     // Track API requests
     let apiLoadingCount = 0;
-    let transitionTimer: NodeJS.Timeout | null = null;
-    let hideTimer: NodeJS.Timeout | null = null;
+    let transitionTimer: ReturnType<typeof setTimeout> | null = null;
+    let hideTimer: ReturnType<typeof setTimeout> | null = null;
     
     const handleApiStart = () => {
       apiLoadingCount++;
