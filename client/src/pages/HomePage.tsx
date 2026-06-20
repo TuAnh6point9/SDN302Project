@@ -7,10 +7,53 @@ import BookCard from '../components/BookCard';
 import BookCardSkeleton from '../components/BookCardSkeleton';
 import type { IBook, ICategory } from '../types';
 
+const SLIDES = [
+  {
+    image: "https://images.unsplash.com/photo-1474511320723-9a56873867b5?auto=format&fit=crop&w=900&q=80",
+    title: "Đời sống kỳ thú của các loài thú",
+    author: "Nguyễn Minh Lâm",
+    category: "Động vật có vú",
+    tagline: "Khám phá tập tính hoang dã",
+    link: "/books"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1444464666168-49d633b86797?auto=format&fit=crop&w=900&q=80",
+    title: "Sổ tay nhận diện chim Việt Nam",
+    author: "Trần Hoài Nam",
+    category: "Chim",
+    tagline: "Cẩm nang tra cứu thực địa",
+    link: "/books"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&w=900&q=80",
+    title: "Cây thuốc quanh ta",
+    author: "Lê An Nhiên",
+    category: "Cây thuốc/Thảo dược",
+    tagline: "Y học cổ truyền & tự nhiên",
+    link: "/books"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=900&q=80",
+    title: "Rừng mưa nhiệt đới",
+    author: "Hoàng Bảo Sơn",
+    category: "Sinh thái rừng",
+    tagline: "Bảo tồn đa dạng sinh học rừng",
+    link: "/books"
+  }
+];
+
 export default function HomePage() {
   const [featuredBooks, setFeaturedBooks] = useState<IBook[]>([]);
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    const slideTimer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % SLIDES.length);
+    }, 5000);
+    return () => clearInterval(slideTimer);
+  }, []);
 
   useEffect(() => {
     // Fetch featured books
@@ -77,23 +120,67 @@ export default function HomePage() {
 
           <div className="lg:col-span-5 flex justify-center relative">
             {/* Background glowing circle */}
-            <div className="absolute w-72 h-72 rounded-full bg-primary-light/10 blur-2xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+            <div className="absolute w-80 h-80 rounded-full bg-primary-light/10 blur-3xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
             
-            <div className="relative w-72 h-72 md:w-80 md:h-80 bg-white/10 rounded-[2.5rem] backdrop-blur-md border border-white/20 p-8 flex flex-col justify-between shadow-2xl animate-float cursor-pointer hover:animate-none hover:scale-[1.02] transition-transform duration-500">
-              <div className="flex justify-between items-start">
-                <span className="text-xs font-bold uppercase tracking-widest text-white/50">GreenLeaf Showcase</span>
-                <div className="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center border border-white/10">
-                  <BookOpen className="w-5 h-5 text-primary-light" />
-                </div>
-              </div>
-              <div className="space-y-4">
-                <p className="text-white/90 font-medium italic text-lg leading-relaxed">
-                  "Trong mọi góc của thiên nhiên đều ẩn chứa một điều kỳ diệu."
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-primary-light animate-ping" />
-                  <span className="text-xs text-white/60 font-semibold tracking-wider uppercase">Aristotle</span>
-                </div>
+            <div className="relative w-80 h-[26rem] md:w-96 md:h-[28rem] bg-white/10 rounded-[2.5rem] backdrop-blur-md border border-white/20 overflow-hidden shadow-2xl flex flex-col justify-end animate-float">
+              {SLIDES.map((slide, index) => {
+                const isActive = index === currentSlide;
+                return (
+                  <div
+                    key={index}
+                    className={`absolute inset-0 transition-all duration-1000 ease-in-out flex flex-col justify-end p-8 ${
+                      isActive ? 'opacity-100 scale-100 pointer-events-auto z-10' : 'opacity-0 scale-95 pointer-events-none z-0'
+                    }`}
+                  >
+                    {/* Background Image with Zoom (Ken Burns) and subtle Parallax */}
+                    <div className="absolute inset-0 overflow-hidden rounded-[2.5rem]">
+                      <img
+                        src={slide.image}
+                        alt={slide.title}
+                        className={`w-full h-full object-cover transition-transform duration-[5000ms] ease-out ${
+                          isActive ? 'scale-110 translate-y-1.5' : 'scale-100 translate-y-0'
+                        }`}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/95 via-emerald-950/40 to-black/10" />
+                    </div>
+
+                    {/* Content overlays */}
+                    <div className={`relative z-10 space-y-3 transition-all duration-700 delay-300 transform ${isActive ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+                      <span className="inline-block text-xs font-bold uppercase tracking-widest text-primary-light bg-primary-dark/45 backdrop-blur-md px-3 py-1 rounded-full border border-primary-light/20">
+                        {slide.category}
+                      </span>
+                      <p className="text-white/80 text-xs font-medium tracking-wide">
+                        {slide.tagline}
+                      </p>
+                      <h3 className="text-white text-xl md:text-2xl font-bold font-heading leading-tight drop-shadow-md">
+                        {slide.title}
+                      </h3>
+                      <div className="flex justify-between items-center pt-2 border-t border-white/10">
+                        <span className="text-white/60 text-xs font-semibold">Tác giả: {slide.author}</span>
+                        <Link
+                          to={slide.link}
+                          className="w-10 h-10 bg-white/10 hover:bg-primary text-white rounded-xl flex items-center justify-center border border-white/20 hover:border-primary transition-all backdrop-blur-sm active:scale-95"
+                        >
+                          <ArrowRight className="w-5 h-5" />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Navigation Indicators */}
+              <div className="absolute top-6 left-6 z-20 flex gap-2">
+                {SLIDES.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      index === currentSlide ? 'w-6 bg-primary-light' : 'w-1.5 bg-white/40'
+                    }`}
+                    aria-label={`Slide ${index + 1}`}
+                  />
+                ))}
               </div>
             </div>
           </div>

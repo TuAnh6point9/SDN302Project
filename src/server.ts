@@ -2,9 +2,22 @@ import app from "./app";
 import { connectDB } from "./config/db";
 import { env } from "./config/env";
 import mongoose from "mongoose";
+import { Category } from "./models/Category";
+import { autoSeedCategories } from "./utils/seedHelper";
 
 const startServer = async () => {
   await connectDB();
+
+  // Auto-seed categories if none exist
+  try {
+    const categoryCount = await Category.countDocuments();
+    if (categoryCount === 0) {
+      console.log("No categories found in database. Auto-seeding categories...");
+      await autoSeedCategories();
+    }
+  } catch (error) {
+    console.error("Auto-seeding check failed:", error);
+  }
 
   const server = app.listen(env.port, () => {
     console.log(`GreenLeaf Books API running on port ${env.port}`);

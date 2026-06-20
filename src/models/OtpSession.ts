@@ -4,6 +4,8 @@ export interface IOtpSession extends Document {
   email: string;
   name: string;
   avatar?: string;
+  passwordHash?: string;
+  phone?: string;
   otp: string;
   expiresAt: Date;
   resendTimestamps: Date[];
@@ -29,6 +31,12 @@ const otpSessionSchema = new Schema<IOtpSession>(
     avatar: {
       type: String,
       trim: true
+    },
+    passwordHash: {
+      type: String
+    },
+    phone: {
+      type: String
     },
     otp: {
       type: String,

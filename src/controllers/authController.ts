@@ -12,7 +12,7 @@ import { signToken } from "../utils/jwt";
 import { serializeAuth } from "../utils/response";
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
-  const { name, email, password, phone, addresses } = req.body;
+  const { name, email, password, phone } = req.body;
 
   const existingUser = await User.findOne({ email });
   if (existingUser) {
@@ -20,16 +20,26 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  const user = await User.create({
-    name,
-    email,
-    passwordHash,
-    phone,
-    addresses
-  });
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-  const token = signToken(user);
-  res.status(201).json(serializeAuth(user, token));
+  await OtpSession.findOneAndUpdate(
+    { email: email.toLowerCase() },
+    {
+      email: email.toLowerCase(),
+      name,
+      passwordHash,
+      phone,
+      otp,
+      expiresAt,
+      resendTimestamps: []
+    },
+    { upsert: true, new: true }
+  );
+
+  await sendOtpEmail(email, otp);
+
+  res.status(200).json({ otpRequired: true, email: email.toLowerCase() });
 });
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
@@ -222,37 +232,27 @@ export const googleLoginCallback = asyncHandler(async (req: Request, res: Respon
   }
 
   // 3. Check if user already exists
-  const existingUser = await User.findOne({ email: userInfo.email });
-  if (existingUser) {
-    if (!existingUser.isActive) {
+  let user = await User.findOne({ email: userInfo.email });
+  if (!user) {
+    // Register immediately!
+    const passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 12);
+    user = await User.create({
+      name: userInfo.name || "Google User",
+      email: userInfo.email.toLowerCase(),
+      passwordHash,
+      avatar: userInfo.picture,
+      role: "customer",
+      isActive: true
+    });
+  } else {
+    if (!user.isActive) {
       return res.redirect(`${clientUrl}/login?error=${encodeURIComponent("Tài khoản của bạn đã bị khóa.")}`);
     }
-
-    // Log in directly
-    const token = signToken(existingUser);
-    return res.redirect(`${clientUrl}/auth-callback?token=${token}`);
   }
 
-  // 4. Email does not exist. Trigger OTP Verification
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
-
-  await OtpSession.findOneAndUpdate(
-    { email: userInfo.email.toLowerCase() },
-    {
-      email: userInfo.email.toLowerCase(),
-      name: userInfo.name || "Google User",
-      avatar: userInfo.picture,
-      otp,
-      expiresAt,
-      resendTimestamps: []
-    },
-    { upsert: true, new: true }
-  );
-
-  await sendOtpEmail(userInfo.email, otp);
-
-  res.redirect(`${clientUrl}/verify-otp?email=${encodeURIComponent(userInfo.email.toLowerCase())}`);
+  // Log in directly
+  const token = signToken(user);
+  return res.redirect(`${clientUrl}/auth-callback?token=${token}`);
 });
 
 export const verifyGoogleOtp = asyncHandler(async (req: Request, res: Response) => {
@@ -275,11 +275,12 @@ export const verifyGoogleOtp = asyncHandler(async (req: Request, res: Response) 
     throw new ApiError(400, "Mã OTP không chính xác.");
   }
 
-  const passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 12);
+  const passwordHash = session.passwordHash || await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 12);
   const user = await User.create({
     name: session.name,
     email: session.email,
     passwordHash,
+    phone: session.phone,
     avatar: session.avatar,
     role: "customer",
     isActive: true

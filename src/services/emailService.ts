@@ -96,7 +96,7 @@ export const sendPasswordResetEmail = async (email: string, resetUrl: string) =>
 
 export const sendOtpEmail = async (email: string, otp: string) => {
   const subject = "GreenLeaf Books - Mã xác thực đăng ký";
-  const text = `Chào mừng bạn đến với GreenLeaf Books!\nMã OTP xác thực của bạn là: ${otp}\nMã OTP này có thời hạn sử dụng là 5 phút.`;
+  const text = `Chào mừng bạn đến với GreenLeaf Books!\nMã OTP xác thực đăng ký tài khoản mới của bạn là: ${otp}\nMã OTP này có thời hạn sử dụng là 5 phút.`;
 
   const html = `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; padding: 40px 10px; margin: 0; min-height: 100%;">
@@ -113,7 +113,7 @@ export const sendOtpEmail = async (email: string, otp: string) => {
           <td style="padding: 40px 30px;">
             <h2 style="color: #1e293b; margin: 0 0 16px 0; font-size: 20px; font-weight: 700; text-align: center;">Xác thực tài khoản của bạn</h2>
             <p style="color: #475569; margin: 0 0 24px 0; font-size: 15px; line-height: 1.6; text-align: center;">
-              Chào mừng bạn đến với <strong>GreenLeaf Books</strong>! Bạn đã yêu cầu đăng nhập bằng tài khoản Google. Hãy nhập mã xác thực OTP dưới đây để hoàn tất quá trình tạo tài khoản của mình.
+              Chào mừng bạn đến với <strong>GreenLeaf Books</strong>! Bạn đã yêu cầu đăng ký tài khoản mới. Hãy nhập mã xác thực OTP dưới đây để hoàn tất quá trình tạo tài khoản của mình.
             </p>
             
             <!-- OTP Code Card -->

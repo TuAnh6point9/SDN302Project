@@ -26,14 +26,19 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const registeredUser = await register({
+      const response = await register({
         name,
         email,
         password,
         phone: phone || undefined,
       });
-      showToast('Đăng ký tài khoản thành công!', 'success');
-      navigate(registeredUser.role === 'admin' ? '/admin/books' : '/');
+      if ('otpRequired' in response) {
+        showToast('Mã OTP đã được gửi đến email của bạn. Vui lòng xác thực!', 'success');
+        navigate(`/verify-otp?email=${encodeURIComponent(response.email)}`);
+      } else {
+        showToast('Đăng ký tài khoản thành công!', 'success');
+        navigate(response.role === 'admin' ? '/admin/books' : '/');
+      }
     } catch (err: unknown) {
       showToast(getApiErrorMessage(err, 'Không thể tạo tài khoản. Vui lòng thử lại.'), 'error');
     } finally {

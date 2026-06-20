@@ -7,7 +7,7 @@ export const authApi = {
     return data;
   },
 
-  register: async (payload: IRegisterPayload): Promise<IAuthResponse> => {
+  register: async (payload: IRegisterPayload): Promise<IAuthResponse | { otpRequired: boolean; email: string }> => {
     const { data } = await apiClient.post('/api/auth/register', payload);
     return data;
   },

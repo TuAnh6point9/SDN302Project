@@ -43,9 +43,37 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="p-12 text-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent mx-auto" />
-        <span className="text-sm text-text-secondary mt-3 block">Đang tải dashboard...</span>
+      <div className="space-y-6 animate-pulse">
+        <div>
+          <div className="h-6 bg-gray-200 rounded w-48" />
+          <div className="h-3 bg-gray-200 rounded w-64 mt-2" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white border border-gray-200/60 rounded-2xl p-5 space-y-4">
+              <div className="w-10 h-10 rounded-xl bg-gray-200" />
+              <div className="space-y-2">
+                <div className="h-3 bg-gray-200 rounded w-20" />
+                <div className="h-6 bg-gray-200 rounded w-32" />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="bg-white border border-gray-200/60 rounded-2xl p-5 space-y-4">
+              <div className="h-5 bg-gray-200 rounded w-32" />
+              <div className="space-y-3 pt-2">
+                {[...Array(4)].map((_, j) => (
+                  <div key={j} className="flex justify-between py-3 border-b border-gray-50 last:border-b-0">
+                    <div className="h-4 bg-gray-200 rounded w-2/3" />
+                    <div className="h-4 bg-gray-200 rounded w-16" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

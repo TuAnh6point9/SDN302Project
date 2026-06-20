@@ -8,7 +8,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAdmin: boolean;
   login: (payload: ILoginPayload) => Promise<IUser>;
-  register: (payload: IRegisterPayload) => Promise<IUser>;
+  register: (payload: IRegisterPayload) => Promise<IUser | { otpRequired: boolean; email: string }>;
   updateProfile: (payload: IUpdateProfilePayload) => Promise<IUser>;
   changePassword: (payload: { currentPassword: string; newPassword: string }) => Promise<void>;
   logout: () => void;
@@ -64,7 +64,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(async (payload: IRegisterPayload) => {
-    const { user: registeredUser, token } = await authApi.register(payload);
+    const response = await authApi.register(payload);
+    if ('otpRequired' in response) {
+      return response;
+    }
+    const { user: registeredUser, token } = response;
     localStorage.setItem('greenleaf_token', token);
     localStorage.setItem('greenleaf_user', JSON.stringify(registeredUser));
     setUser(registeredUser);

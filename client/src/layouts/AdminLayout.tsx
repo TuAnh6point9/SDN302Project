@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import RouteTitle from '../components/RouteTitle';
+import TopLoadingBar from '../components/TopLoadingBar';
 
 const sidebarLinks = [
   { to: '/admin/dashboard', label: 'Tổng quan', icon: BarChart3 },
@@ -43,6 +44,7 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      <TopLoadingBar />
       <RouteTitle />
       {isSidebarOpen && (
         <div
