@@ -259,6 +259,13 @@ export const updateOrderStatusSchema = z.object({
   })
 });
 
+export const cancelOrderSchema = z.object({
+  params: z.object({ id: objectId }),
+  body: z.object({
+    cancelReason: z.string().trim().max(500).optional()
+  }).optional().default({})
+});
+
 export const createReviewSchema = z.object({
   params: z.object({ id: objectId }),
   body: z.object({

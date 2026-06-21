@@ -9,6 +9,32 @@ import { sendOrderCreatedEmail, sendOrderStatusEmail } from "../services/emailSe
 import { createNotification, notifyAdmins } from "../services/notificationService";
 import { InventoryMovement } from "../models/InventoryMovement";
 
+const restoreCancelledOrderStock = async (order: IOrder, changedBy: unknown) => {
+  await Promise.all(
+    order.items.map(async (item) => {
+      const book = await Book.findOneAndUpdate(
+        { _id: item.book },
+        { $inc: { stockQuantity: item.quantity } },
+        { new: true }
+      );
+
+      if (!book) {
+        return;
+      }
+
+      await InventoryMovement.create({
+        book: item.book,
+        type: "return",
+        quantityChange: item.quantity,
+        quantityBefore: book.stockQuantity - item.quantity,
+        quantityAfter: book.stockQuantity,
+        note: `Cancelled order ${order.orderCode}`,
+        createdBy: changedBy
+      });
+    })
+  );
+};
+
 export const createOrder = asyncHandler(async (req: Request, res: Response) => {
   const order = await createOrderWithStockTransaction({
     userId: req.user!._id,
@@ -109,6 +135,61 @@ export const getOrderById = asyncHandler(async (req: Request, res: Response) => 
   res.json({ order });
 });
 
+export const cancelMyOrder = asyncHandler(async (req: Request, res: Response) => {
+  const order = await Order.findById(req.params.id);
+
+  if (!order) {
+    throw new ApiError(404, "Khong tim thay don hang");
+  }
+
+  if (String(order.user) !== String(req.user!._id)) {
+    throw new ApiError(403, "Ban khong co quyen huy don hang nay");
+  }
+
+  if (order.orderStatus !== "pending") {
+    throw new ApiError(400, "Chi co the huy don hang dang cho xac nhan");
+  }
+
+  if (order.paymentStatus === "paid") {
+    throw new ApiError(400, "Don hang da thanh toan, vui long lien he quan tri vien de duoc ho tro");
+  }
+
+  await restoreCancelledOrderStock(order, req.user!._id);
+
+  const cancelReason = req.body.cancelReason?.trim() || "Khach hang huy don";
+  order.orderStatus = "cancelled";
+  order.cancelReason = cancelReason;
+  order.statusHistory.push({
+    status: "cancelled",
+    note: cancelReason,
+    changedBy: req.user!._id,
+    changedAt: new Date()
+  });
+
+  await order.save();
+  await order.populate("user", "name email phone");
+
+  sendOrderStatusEmail(order).catch((error) => {
+    console.error("Order cancellation email failed", error);
+  });
+  createNotification({
+    user: req.user!._id,
+    audience: "user",
+    type: "order",
+    title: "Don hang da duoc huy",
+    message: `Don ${order.orderCode} da duoc huy.`,
+    link: `/orders/${order._id}`
+  }).catch(console.error);
+  notifyAdmins(
+    "order",
+    "Khach hang huy don",
+    `Don ${order.orderCode} da duoc khach hang huy.`,
+    "/admin/orders"
+  ).catch(console.error);
+
+  res.json({ order });
+});
+
 export const updateOrderStatus = asyncHandler(
   async (req: Request, res: Response) => {
     const order = await Order.findById(req.params.id);
@@ -122,29 +203,7 @@ export const updateOrderStatus = asyncHandler(
     }
 
     if (order.orderStatus !== "cancelled" && req.body.orderStatus === "cancelled") {
-      await Promise.all(
-        order.items.map(async (item) => {
-          const book = await Book.findOneAndUpdate(
-            { _id: item.book },
-            { $inc: { stockQuantity: item.quantity } },
-            { new: true }
-          );
-
-          if (!book) {
-            return;
-          }
-
-          await InventoryMovement.create({
-            book: item.book,
-            type: "return",
-            quantityChange: item.quantity,
-            quantityBefore: book.stockQuantity - item.quantity,
-            quantityAfter: book.stockQuantity,
-            note: `Cancelled order ${order.orderCode}`,
-            createdBy: req.user!._id
-          });
-        })
-      );
+      await restoreCancelledOrderStock(order, req.user!._id);
     }
 
     const previousStatus = order.orderStatus;
