@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, ClipboardList, CreditCard, MapPin, Timer } from 'lucide-react';
+import { ArrowLeft, ClipboardList, CreditCard, MapPin, Timer, XCircle } from 'lucide-react';
 import { orderApi } from '../api/orderApi';
 import { paymentApi } from '../api/paymentApi';
 import type { IOrder, OrderStatus } from '../types';
@@ -23,6 +23,7 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [paying, setPaying] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -57,6 +58,7 @@ export default function OrderDetailPage() {
   const canPayOnline = order.paymentMethod === 'ONLINE'
     && order.paymentStatus === 'pending'
     && order.orderStatus !== 'cancelled';
+  const canCancelOrder = order.orderStatus === 'pending' && order.paymentStatus !== 'paid';
 
   const handlePayOnline = async () => {
     setPaying(true);
@@ -73,6 +75,25 @@ export default function OrderDetailPage() {
       setError(getApiErrorMessage(err, 'Không thể tạo thanh toán payOS.'));
     } finally {
       setPaying(false);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    const cancelReason = window.prompt('Nhập lý do hủy đơn hàng (có thể bỏ trống):') || undefined;
+
+    if (!window.confirm('Bạn chắc chắn muốn hủy đơn hàng này?')) {
+      return;
+    }
+
+    setCancelling(true);
+    setError('');
+    try {
+      const updatedOrder = await orderApi.cancelOrder(order._id, cancelReason?.trim() || undefined);
+      setOrder(updatedOrder);
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Không thể hủy đơn hàng.'));
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -192,6 +213,23 @@ export default function OrderDetailPage() {
                 ) : (
                   <>
                     <CreditCard className="w-5 h-5" /> Thanh toán VietQR
+                  </>
+                )}
+              </button>
+            )}
+
+            {canCancelOrder && (
+              <button
+                type="button"
+                disabled={cancelling}
+                onClick={() => void handleCancelOrder()}
+                className="btn-outline w-full !border-red-200 !text-red-600 hover:!bg-red-50 disabled:opacity-60"
+              >
+                {cancelling ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-red-500 border-t-transparent" />
+                ) : (
+                  <>
+                    <XCircle className="w-5 h-5" /> Hủy đơn hàng
                   </>
                 )}
               </button>

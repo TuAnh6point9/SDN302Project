@@ -43,4 +43,9 @@ export const orderApi = {
     const { data } = await apiClient.put(`/api/orders/${id}/status`, payload);
     return data.order;
   },
+
+  cancelOrder: async (id: string, cancelReason?: string): Promise<IOrder> => {
+    const { data } = await apiClient.put(`/api/orders/${id}/cancel`, { cancelReason });
+    return data.order;
+  },
 };
