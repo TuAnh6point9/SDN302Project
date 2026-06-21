@@ -4,3 +4,11 @@ dist
 uploads
 .runtime-logs/
 npm-debug.log*
+
+# Claude Code local files
+CLAUDE.md
+CLAUDE.local.md
+CLAUDE.local.md2
+.agents/
+.vscode/
+skills-lock.json

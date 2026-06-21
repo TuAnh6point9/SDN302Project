@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, ClipboardList, CreditCard, MapPin, Timer, XCircle } from 'lucide-react';
 import { orderApi } from '../api/orderApi';
 import { paymentApi } from '../api/paymentApi';
 import type { IOrder, OrderStatus } from '../types';
 import { getApiErrorMessage } from '../utils/errors';
+import Modal from '../components/ui/Modal';
+import { useToast } from '../contexts/ToastContext';
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
@@ -24,6 +26,15 @@ export default function OrderDetailPage() {
   const [error, setError] = useState('');
   const [paying, setPaying] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const { showToast } = useToast();
+
+  const closeCancelModal = useCallback(() => {
+    if (cancelling) return;
+    setShowCancelModal(false);
+    setCancelReason('');
+  }, [cancelling]);
 
   useEffect(() => {
     if (!id) return;
@@ -79,19 +90,15 @@ export default function OrderDetailPage() {
   };
 
   const handleCancelOrder = async () => {
-    const cancelReason = window.prompt('Nhập lý do hủy đơn hàng (có thể bỏ trống):') || undefined;
-
-    if (!window.confirm('Bạn chắc chắn muốn hủy đơn hàng này?')) {
-      return;
-    }
-
     setCancelling(true);
-    setError('');
     try {
-      const updatedOrder = await orderApi.cancelOrder(order._id, cancelReason?.trim() || undefined);
+      const updatedOrder = await orderApi.cancelOrder(order._id, cancelReason.trim() || undefined);
       setOrder(updatedOrder);
+      setShowCancelModal(false);
+      setCancelReason('');
+      showToast('Đơn hàng đã được hủy thành công.', 'success');
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, 'Không thể hủy đơn hàng.'));
+      showToast(getApiErrorMessage(err, 'Không thể hủy đơn hàng.'), 'error');
     } finally {
       setCancelling(false);
     }
@@ -221,22 +228,58 @@ export default function OrderDetailPage() {
             {canCancelOrder && (
               <button
                 type="button"
-                disabled={cancelling}
-                onClick={() => void handleCancelOrder()}
-                className="btn-outline w-full !border-red-200 !text-red-600 hover:!bg-red-50 disabled:opacity-60"
+                onClick={() => setShowCancelModal(true)}
+                className="btn-outline w-full !border-red-200 !text-red-600 hover:!bg-red-50"
               >
-                {cancelling ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-red-500 border-t-transparent" />
-                ) : (
-                  <>
-                    <XCircle className="w-5 h-5" /> Hủy đơn hàng
-                  </>
-                )}
+                <XCircle className="w-5 h-5" /> Hủy đơn hàng
               </button>
             )}
           </aside>
         </div>
       </div>
+
+      <Modal open={showCancelModal} onClose={closeCancelModal} title="Hủy đơn hàng">
+        <p className="text-sm text-text-secondary">
+          Bạn chắc chắn muốn hủy đơn <span className="font-semibold text-text">{order.orderCode}</span>? Hành động này không thể hoàn tác.
+        </p>
+        <div className="space-y-1.5">
+          <label htmlFor="cancel-reason" className="text-sm font-medium text-text">
+            Lý do hủy <span className="text-text-secondary font-normal">(có thể bỏ trống)</span>
+          </label>
+          <textarea
+            id="cancel-reason"
+            rows={3}
+            className="input-field resize-none"
+            placeholder="Nhập lý do hủy đơn hàng..."
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            disabled={cancelling}
+            maxLength={500}
+          />
+        </div>
+        <div className="flex gap-3 pt-1">
+          <button
+            type="button"
+            onClick={closeCancelModal}
+            disabled={cancelling}
+            className="btn-ghost flex-1 disabled:opacity-60"
+          >
+            Hủy bỏ
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleCancelOrder()}
+            disabled={cancelling}
+            className="btn-danger flex-1 disabled:opacity-60"
+          >
+            {cancelling ? (
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+            ) : (
+              'Xác nhận hủy'
+            )}
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }
