@@ -282,6 +282,10 @@ export const reviewParamsSchema = z.object({
   params: z.object({ reviewId: objectId })
 });
 
+export const bookSubscriptionParamsSchema = z.object({
+  params: z.object({ id: objectId })
+});
+
 export const inventoryBookParamsSchema = z.object({
   params: z.object({ bookId: objectId })
 });
@@ -298,5 +302,17 @@ export const adjustInventorySchema = z.object({
     return value.quantityChange !== undefined && value.quantityChange !== 0;
   }, {
     message: "Thong tin dieu chinh ton kho khong hop le"
+  })
+});
+
+export const rewardHistorySchema = z.object({
+  query: z.object({
+    limit: z.coerce.number().int().positive().max(100).optional()
+  })
+});
+
+export const redeemVoucherSchema = z.object({
+  body: z.object({
+    points: z.number().int().positive()
   })
 });

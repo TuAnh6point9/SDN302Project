@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Bell, CheckCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { notificationApi } from '../api/notificationApi';
-import type { INotification } from '../types';
+import { useNotifications } from '../contexts/NotificationContext';
 import { getApiErrorMessage } from '../utils/errors';
 
 const formatDate = (value: string) =>
@@ -12,34 +11,13 @@ const formatDate = (value: string) =>
   }).format(new Date(value));
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<INotification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const { notifications, unreadCount, isLoading: loading, markAllRead } = useNotifications();
   const [error, setError] = useState('');
-
-  const fetchNotifications = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const data = await notificationApi.getNotifications();
-      setNotifications(data.notifications);
-      setUnreadCount(data.unreadCount);
-    } catch (err) {
-      setError(getApiErrorMessage(err, 'Không thể tải thông báo.'));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void Promise.resolve().then(fetchNotifications);
-  }, [fetchNotifications]);
 
   const handleMarkRead = async () => {
     setError('');
     try {
-      await notificationApi.markRead();
-      await fetchNotifications();
+      await markAllRead();
     } catch (err) {
       setError(getApiErrorMessage(err, 'Không thể đánh dấu đã đọc.'));
     }

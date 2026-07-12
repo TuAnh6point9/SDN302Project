@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Book } from "../models/Book";
 import { InventoryMovement } from "../models/InventoryMovement";
+import { notifyBackInStockSubscribers } from "../services/backInStockService";
 import { createNotification, notifyAdmins } from "../services/notificationService";
 import { ApiError } from "../utils/ApiError";
 import { asyncHandler } from "../utils/asyncHandler";
@@ -60,6 +61,10 @@ export const adjustInventory = asyncHandler(async (req: Request, res: Response) 
     message: `${book.title}: ${quantityBefore} -> ${quantityAfter}`,
     link: "/admin/inventory"
   });
+
+  if (quantityBefore === 0 && quantityAfter > 0) {
+    notifyBackInStockSubscribers(book).catch(console.error);
+  }
 
   res.json({ book, movement });
 });

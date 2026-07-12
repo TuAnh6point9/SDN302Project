@@ -18,13 +18,14 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import { categoryApi } from '../api/categoryApi';
-import { notificationApi } from '../api/notificationApi';
 import type { ICategory } from '../types';
 
 export default function Header() {
   const { user, isAdmin, logout } = useAuth();
   const { itemCount } = useCart();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
 
   const [categories, setCategories] = useState<ICategory[]>([]);
@@ -33,7 +34,6 @@ export default function Header() {
   const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
 
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const accountDropdownRef = useRef<HTMLDivElement>(null);
@@ -41,17 +41,6 @@ export default function Header() {
   useEffect(() => {
     categoryApi.getCategories().then(setCategories).catch(console.error);
   }, []);
-
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
-
-    notificationApi
-      .getNotifications()
-      .then((data) => setUnreadCount(data.unreadCount))
-      .catch(console.error);
-  }, [user]);
 
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {

@@ -3,10 +3,11 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { bookApi } from '../api/bookApi';
 import { reviewApi } from '../api/reviewApi';
+import { subscriptionApi } from '../api/subscriptionApi';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
-import { ArrowLeft, BookOpen, Calendar, Globe, Hash, FileText, Star, Award, ChevronRight, Bookmark, ShoppingCart, AlertCircle, Heart } from 'lucide-react';
+import { ArrowLeft, Bell, BellRing, BookOpen, Calendar, Globe, Hash, FileText, Star, Award, ChevronRight, Bookmark, ShoppingCart, AlertCircle, Heart } from 'lucide-react';
 import type { IBook, ICategory } from '../types';
 import type { IReview } from '../types';
 import { getApiErrorMessage } from '../utils/errors';
@@ -32,6 +33,9 @@ export default function BookDetailPage() {
   const [reviewError, setReviewError] = useState('');
   const [reviewSuccess, setReviewSuccess] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
+  const [subscribeError, setSubscribeError] = useState('');
 
   useEffect(() => {
     if (!slug) return;
@@ -48,6 +52,15 @@ export default function BookDetailPage() {
       })
       .finally(() => setLoading(false));
   }, [slug]);
+
+  useEffect(() => {
+    if (!book || !user || book.stockQuantity > 0) return;
+    subscriptionApi.getStatus(book._id)
+      .then((res) => setSubscribed(res.subscribed))
+      .catch(() => {
+        // Trạng thái đăng ký chỉ là tiện ích hiển thị — lỗi thì bỏ qua
+      });
+  }, [book, user]);
 
   if (loading) {
     return (
@@ -91,6 +104,30 @@ export default function BookDetailPage() {
       setCartMessage('Đã thêm sách vào giỏ hàng.');
     } catch (err: unknown) {
       setCartError(getApiErrorMessage(err, 'Không thể thêm vào giỏ hàng.'));
+    }
+  };
+
+  const handleToggleSubscribe = async () => {
+    setSubscribeError('');
+
+    if (!user) {
+      navigate('/login', { state: { from: `/books/${book.slug}` } });
+      return;
+    }
+
+    setSubscribing(true);
+    try {
+      if (subscribed) {
+        await subscriptionApi.unsubscribe(book._id);
+        setSubscribed(false);
+      } else {
+        await subscriptionApi.subscribe(book._id);
+        setSubscribed(true);
+      }
+    } catch (err: unknown) {
+      setSubscribeError(getApiErrorMessage(err, 'Không thể cập nhật đăng ký thông báo.'));
+    } finally {
+      setSubscribing(false);
     }
   };
 
@@ -287,13 +324,28 @@ export default function BookDetailPage() {
                 <AlertCircle className="w-4 h-4" /> {cartError}
               </p>
             )}
-            <button
-              onClick={handleAddToCart}
-              disabled={book.stockQuantity <= 0}
-              className="btn-primary flex-1 min-w-[200px] disabled:opacity-50"
-            >
-              <ShoppingCart className="w-4 h-4" /> Thêm vào giỏ
-            </button>
+            {subscribeError && (
+              <p className="text-sm text-red-600 font-semibold w-full inline-flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4" /> {subscribeError}
+              </p>
+            )}
+            {book.stockQuantity > 0 ? (
+              <button
+                onClick={handleAddToCart}
+                className="btn-primary flex-1 min-w-[200px]"
+              >
+                <ShoppingCart className="w-4 h-4" /> Thêm vào giỏ
+              </button>
+            ) : (
+              <button
+                onClick={() => void handleToggleSubscribe()}
+                disabled={subscribing}
+                className={`flex-1 min-w-[200px] disabled:opacity-50 ${subscribed ? 'btn-outline !border-primary !text-primary' : 'btn-primary'}`}
+              >
+                {subscribed ? <BellRing className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                {subscribing ? 'Đang xử lý...' : subscribed ? 'Đã đăng ký ✓' : 'Báo khi có hàng'}
+              </button>
+            )}
             <button
               onClick={handleToggleWishlist}
               className="btn-outline flex-1 min-w-[200px]"

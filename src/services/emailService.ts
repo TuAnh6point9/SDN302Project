@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { env } from "../config/env";
+import { IBook } from "../models/Book";
 import { IOrder } from "../models/Order";
 import { IUser } from "../models/User";
 
@@ -89,6 +90,16 @@ export const sendPasswordResetEmail = async (email: string, resetUrl: string) =>
     `Mở liên kết sau để đặt lại mật khẩu: ${resetUrl}`,
     "Liên kết có hiệu lực trong 30 phút.",
     "Nếu bạn không yêu cầu thao tác này, hãy bỏ qua email này."
+  ].join("\n");
+
+  await sendMail(email, subject, text);
+};
+
+export const sendBackInStockEmail = async (email: string | undefined, book: Pick<IBook, "title" | "slug">) => {
+  const subject = `GreenLeaf Books - ${book.title} đã có hàng trở lại`;
+  const text = [
+    `Cuốn sách "${book.title}" mà bạn đăng ký theo dõi đã có hàng trở lại.`,
+    `Xem chi tiết và đặt hàng: ${env.clientUrl}/books/${book.slug}`
   ].join("\n");
 
   await sendMail(email, subject, text);

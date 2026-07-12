@@ -8,10 +8,16 @@ import {
 } from "../controllers/bookController";
 import { exportBooksCsv, importBooksCsv } from "../controllers/bookCsvController";
 import { createReview, getBookReviews } from "../controllers/reviewController";
+import {
+  getSubscriptionStatus,
+  subscribeToBook,
+  unsubscribeFromBook
+} from "../controllers/subscriptionController";
 import { protect, requireAdmin } from "../middlewares/auth";
 import { validate } from "../middlewares/validate";
 import {
   bookParamsSchema,
+  bookSubscriptionParamsSchema,
   createBookSchema,
   createReviewSchema,
   importBooksCsvSchema,
@@ -32,5 +38,9 @@ router.delete("/:id", protect, requireAdmin, validate(bookParamsSchema), deleteB
 
 router.post("/:id/reviews", protect, validate(createReviewSchema), createReview);
 router.get("/:id/reviews", validate(listReviewsSchema), getBookReviews);
+
+router.post("/:id/subscribe", protect, validate(bookSubscriptionParamsSchema), subscribeToBook);
+router.delete("/:id/subscribe", protect, validate(bookSubscriptionParamsSchema), unsubscribeFromBook);
+router.get("/:id/subscribe", protect, validate(bookSubscriptionParamsSchema), getSubscriptionStatus);
 
 export default router;

@@ -1,9 +1,11 @@
 import { Request, Response } from "express";
+import { Types } from "mongoose";
 import { Book } from "../models/Book";
 import { Order } from "../models/Order";
 import { Review } from "../models/Review";
 import { ApiError } from "../utils/ApiError";
 import { asyncHandler } from "../utils/asyncHandler";
+import { awardReviewReward } from "../services/rewardService";
 
 const refreshBookRating = async (bookId: string) => {
   const stats = await Review.aggregate([
@@ -48,6 +50,7 @@ export const createReview = asyncHandler(async (req: Request, res: Response) => 
   });
 
   await refreshBookRating(String(book._id));
+  awardReviewReward(req.user!._id as Types.ObjectId, review._id as Types.ObjectId).catch(console.error);
   res.status(201).json({ review });
 });
 

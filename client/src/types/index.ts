@@ -78,6 +78,8 @@ export interface IUser {
   phone?: string;
   addresses?: IUserAddress[];
   avatar?: string;
+  points?: number;
+  lastRewardDay?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -113,6 +115,36 @@ export interface IUpdateProfilePayload {
 export interface IAuthResponse {
   user: IUser;
   token: string;
+}
+
+// ─── Reward ──────────────────────────────────────────────────────────────────
+
+export interface IRewardStatus {
+  canClaim: boolean;
+  points: number;
+  rewardPoints: number;
+  today: string;
+}
+
+export type RewardReason = 'daily_login' | 'purchase' | 'review' | 'redeem_voucher';
+
+export interface IRewardHistoryItem {
+  _id: string;
+  user: string | Pick<IUser, '_id' | 'name' | 'email'>;
+  points: number;
+  day: string;
+  reason: RewardReason;
+  balanceAfter?: number;
+  refId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IRewardSummary {
+  totalIssued: number;
+  totalRedeemed: number;
+  byReason: Array<{ reason: RewardReason; totalPoints: number; count: number }>;
+  topHolders: Array<{ _id: string; name: string; email: string; points: number }>;
 }
 
 // Cart / Order

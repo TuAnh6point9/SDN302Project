@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { AlertCircle, CheckCircle2, KeyRound, MapPin, Save, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { AlertCircle, CheckCircle2, Coins, KeyRound, MapPin, Save, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getApiErrorMessage } from '../utils/errors';
 import type { IUserAddress } from '../types';
@@ -83,6 +84,23 @@ export default function ProfilePage() {
         <h1 className="text-3xl font-bold font-heading text-text">Hồ sơ cá nhân</h1>
         <p className="text-text-secondary text-sm mt-1">Quản lý thông tin dùng cho đặt hàng và giao nhận</p>
       </div>
+
+      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <Coins className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h2 className="font-heading font-bold text-lg">Điểm thưởng</h2>
+            <p className="text-sm text-text-secondary">
+              Bạn đang có <span className="font-semibold text-primary">{user?.points ?? 0}</span> điểm
+            </p>
+          </div>
+        </div>
+        <Link to="/rewards" className="btn-ghost self-start sm:self-auto">
+          Xem lịch sử
+        </Link>
+      </section>
 
       <form onSubmit={handleProfileSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <section className="lg:col-span-5 bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-5">

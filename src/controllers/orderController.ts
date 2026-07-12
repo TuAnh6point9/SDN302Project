@@ -7,6 +7,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { createOrderWithStockTransaction } from "../services/orderService";
 import { sendOrderCreatedEmail, sendOrderStatusEmail } from "../services/emailService";
 import { createNotification, notifyAdmins } from "../services/notificationService";
+import { awardPurchaseReward } from "../services/rewardService";
 import { InventoryMovement } from "../models/InventoryMovement";
 
 const restoreCancelledOrderStock = async (order: IOrder, changedBy: unknown) => {
@@ -237,6 +238,10 @@ export const updateOrderStatus = asyncHandler(
       message: `Đơn ${order.orderCode} hiện ở trạng thái ${order.orderStatus}.`,
       link: `/orders/${order._id}`
     }).catch(console.error);
+
+    if (order.orderStatus === "delivered") {
+      awardPurchaseReward(order).catch(console.error);
+    }
     res.json({ order });
   }
 );

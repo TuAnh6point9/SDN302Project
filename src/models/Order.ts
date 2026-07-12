@@ -45,6 +45,7 @@ export interface IOrder extends Document {
   orderStatus: OrderStatus;
   cancelReason?: string;
   statusHistory: IOrderStatusHistory[];
+  rewardGranted: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -107,7 +108,8 @@ const orderSchema = new Schema<IOrder>(
       index: true
     },
     cancelReason: { type: String, trim: true },
-    statusHistory: { type: [orderStatusHistorySchema], default: [] }
+    statusHistory: { type: [orderStatusHistorySchema], default: [] },
+    rewardGranted: { type: Boolean, default: false }
   },
   { timestamps: true }
 );

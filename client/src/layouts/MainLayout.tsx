@@ -3,6 +3,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import RouteTitle from '../components/RouteTitle';
 import TopLoadingBar from '../components/TopLoadingBar';
+import DailyRewardModal from '../components/DailyRewardModal';
 
 export default function MainLayout() {
   return (
@@ -14,6 +15,7 @@ export default function MainLayout() {
         <Outlet />
       </main>
       <Footer />
+      <DailyRewardModal />
       <ScrollRestoration />
     </div>
   );

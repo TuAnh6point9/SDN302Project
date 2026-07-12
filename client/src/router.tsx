@@ -24,6 +24,7 @@ const OrderDetailPage = lazy(() => import('./pages/OrderDetailPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const WishlistPage = lazy(() => import('./pages/WishlistPage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
+const RewardsPage = lazy(() => import('./pages/RewardsPage'));
 
 const BooksManagePage = lazy(() => import('./pages/admin/BooksManagePage'));
 const CategoriesManagePage = lazy(() => import('./pages/admin/CategoriesManagePage'));
@@ -33,6 +34,7 @@ const VouchersManagePage = lazy(() => import('./pages/admin/VouchersManagePage')
 const UsersManagePage = lazy(() => import('./pages/admin/UsersManagePage'));
 const ReviewsManagePage = lazy(() => import('./pages/admin/ReviewsManagePage'));
 const InventoryManagePage = lazy(() => import('./pages/admin/InventoryManagePage'));
+const RewardDashboardPage = lazy(() => import('./pages/admin/RewardDashboardPage'));
 
 const lazyPage = (element: ReactNode) => (
   <Suspense fallback={<PageLoader />}>
@@ -55,6 +57,7 @@ export const router = createBrowserRouter([
       { path: 'profile', element: lazyPage(<AuthRequiredRoute><ProfilePage /></AuthRequiredRoute>) },
       { path: 'wishlist', element: lazyPage(<AuthRequiredRoute><WishlistPage /></AuthRequiredRoute>) },
       { path: 'notifications', element: lazyPage(<AuthRequiredRoute><NotificationsPage /></AuthRequiredRoute>) },
+      { path: 'rewards', element: lazyPage(<AuthRequiredRoute><RewardsPage /></AuthRequiredRoute>) },
     ],
   },
   {
@@ -97,6 +100,7 @@ export const router = createBrowserRouter([
       { path: 'vouchers', element: lazyPage(<VouchersManagePage />) },
       { path: 'reviews', element: lazyPage(<ReviewsManagePage />) },
       { path: 'inventory', element: lazyPage(<InventoryManagePage />) },
+      { path: 'rewards', element: lazyPage(<RewardDashboardPage />) },
       { path: 'users', element: lazyPage(<UsersManagePage />) },
     ],
   },
