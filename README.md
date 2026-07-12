@@ -1,9 +1,10 @@
 # GreenLeaf Books
 
-Nền tảng mua bán sách chủ đề thiên nhiên, động vật, thực vật và môi trường. Backend dùng `Express + TypeScript + MongoDB`, frontend dùng `React + Vite + TailwindCSS`.
+Nền tảng mua bán sách chủ đề thiên nhiên, động vật, thực vật và môi trường. Backend dùng `Express + TypeScript + MongoDB`, frontend dùng `React + Vite + TailwindCSS`, mobile dùng `React Native + Expo`.
 
 ## Cập Nhật Mới
 
+- **App Android (React Native + Expo):** app mobile trong thư mục `mobile/`, chạy thử ngay qua Expo Go, dùng chung toàn bộ API backend — đăng nhập/đăng ký OTP, duyệt và tìm sách, giỏ hàng, đặt hàng COD/VietQR, hủy đơn, đánh giá sách, wishlist, thông báo, điểm danh nhận thưởng, đổi điểm lấy voucher, đăng ký báo hàng về.
 - **Hệ thống điểm thưởng (Reward System):** điểm danh nhận thưởng mỗi ngày, tích điểm khi mua hàng (đơn `delivered`) và khi đánh giá sách, đổi điểm lấy voucher giảm giá dùng thật, lịch sử giao dịch điểm có số dư (ledger), dashboard điểm thưởng cho admin (`/admin/rewards`).
 - **Đăng ký thông báo hàng về (Back In Stock Subscription):** khách bấm "Báo khi có hàng" trên trang chi tiết sách hết hàng; khi admin nhập kho trở lại, hệ thống tự động gửi notification + email cho toàn bộ người đã đăng ký.
 
@@ -70,6 +71,24 @@ File `client/.env`:
 ```env
 VITE_API_URL=http://localhost:5000
 ```
+
+## Cài Đặt Mobile (Expo)
+
+Yêu cầu: điện thoại Android cài app **Expo Go**, điện thoại và máy dev cùng mạng LAN/Wi-Fi.
+
+```bash
+cd mobile
+npm install
+npm start
+```
+
+Quét QR code trong terminal bằng Expo Go. App tự suy ra địa chỉ backend từ LAN IP của Expo dev server (port 5000) nên thường không cần cấu hình gì. Nếu backend chạy ở máy/port khác, tạo file `mobile/.env`:
+
+```env
+EXPO_PUBLIC_API_URL=http://192.168.1.10:5000
+```
+
+Lưu ý: backend phải chạy trước (`npm run dev` ở gốc) và MongoDB phải là replica set (Atlas hoặc local replica set) để đặt hàng được. Thanh toán VietQR mở trình duyệt tới payOS; webhook vẫn cần backend public như hướng dẫn bên dưới.
 
 ## Seed Dữ Liệu MongoDB
 
