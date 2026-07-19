@@ -373,44 +373,55 @@ export default function BookDetailPage() {
         <h2 className="text-xl font-bold font-heading text-primary-dark border-b border-gray-100 pb-3 flex items-center gap-2">
           <Star className="w-5 h-5" /> Đánh giá từ độc giả
         </h2>
-        <form onSubmit={handleSubmitReview} className="border border-gray-100 rounded-2xl p-4 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-            <div>
-              <h3 className="font-semibold text-text">Viết đánh giá</h3>
-              <p className="text-xs text-text-secondary mt-0.5">Chỉ khách hàng đã nhận sách mới có thể đánh giá.</p>
+        {user ? (
+          <form onSubmit={handleSubmitReview} className="border border-gray-100 rounded-2xl p-4 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+              <div>
+                <h3 className="font-semibold text-text">Viết đánh giá</h3>
+                <p className="text-xs text-text-secondary mt-0.5">Chỉ khách hàng đã nhận sách mới có thể đánh giá.</p>
+              </div>
+              <select
+                value={reviewRating}
+                onChange={(event) => setReviewRating(Number(event.target.value))}
+                className="input-field !py-2 text-sm sm:!w-36"
+              >
+                <option value={5}>5 sao</option>
+                <option value={4}>4 sao</option>
+                <option value={3}>3 sao</option>
+                <option value={2}>2 sao</option>
+                <option value={1}>1 sao</option>
+              </select>
             </div>
-            <select
-              value={reviewRating}
-              onChange={(event) => setReviewRating(Number(event.target.value))}
-              className="input-field !py-2 text-sm sm:!w-36"
-            >
-              <option value={5}>5 sao</option>
-              <option value={4}>4 sao</option>
-              <option value={3}>3 sao</option>
-              <option value={2}>2 sao</option>
-              <option value={1}>1 sao</option>
-            </select>
-          </div>
-          <textarea
-            value={reviewComment}
-            onChange={(event) => setReviewComment(event.target.value)}
-            maxLength={1000}
-            rows={3}
-            placeholder="Chia sẻ cảm nhận của bạn về cuốn sách..."
-            className="input-field text-sm"
-          />
-          {reviewError && (
-            <p className="text-sm text-red-600 inline-flex items-center gap-1.5">
-              <AlertCircle className="w-4 h-4" /> {reviewError}
+            <textarea
+              value={reviewComment}
+              onChange={(event) => setReviewComment(event.target.value)}
+              maxLength={1000}
+              rows={3}
+              placeholder="Chia sẻ cảm nhận của bạn về cuốn sách..."
+              className="input-field text-sm"
+            />
+            {reviewError && (
+              <p className="text-sm text-red-600 inline-flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4" /> {reviewError}
+              </p>
+            )}
+            {reviewSuccess && <p className="text-sm text-primary font-semibold">{reviewSuccess}</p>}
+            <div className="flex justify-end">
+              <button type="submit" disabled={submittingReview} className="btn-primary !py-2.5 text-sm disabled:opacity-50">
+                {submittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="border border-gray-100 rounded-2xl p-4 text-center">
+            <p className="text-sm text-text-secondary">
+              <Link to="/login" state={{ from: `/books/${book.slug}` }} className="text-primary font-semibold hover:underline">
+                Đăng nhập
+              </Link>
+              {' '}để viết đánh giá.
             </p>
-          )}
-          {reviewSuccess && <p className="text-sm text-primary font-semibold">{reviewSuccess}</p>}
-          <div className="flex justify-end">
-            <button type="submit" disabled={submittingReview} className="btn-primary !py-2.5 text-sm disabled:opacity-50">
-              {submittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
-            </button>
           </div>
-        </form>
+        )}
         {reviews.length === 0 ? (
           <p className="text-sm text-text-secondary">Chưa có đánh giá nào cho cuốn sách này.</p>
         ) : (

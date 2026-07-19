@@ -109,6 +109,11 @@ export default function LoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="bg-white py-8 px-6 shadow-xl rounded-3xl border border-gray-100 sm:px-10">
+          {location.state?.from && (
+            <div className="mb-6 p-3 bg-primary-light/10 border border-primary-light/30 rounded-xl text-sm text-primary-dark text-center">
+              Vui lòng đăng nhập để tiếp tục.
+            </div>
+          )}
           <form className="space-y-6" onSubmit={handleSubmit} noValidate>
 
             <div className="space-y-2">
