@@ -50,7 +50,7 @@ export default function BookCard({ book, onPress }: Props) {
         </TouchableOpacity>
         {outOfStock && (
           <View style={styles.outOfStock}>
-            <Text style={styles.outOfStockText}>Out of Stock</Text>
+            <Text style={styles.outOfStockText}>Hết hàng</Text>
           </View>
         )}
       </View>

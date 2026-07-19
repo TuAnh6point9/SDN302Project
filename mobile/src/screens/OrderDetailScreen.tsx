@@ -268,7 +268,7 @@ export default function OrderDetailScreen() {
                 {cancelling ? (
                   <ActivityIndicator color={colors.surface} size="small" />
                 ) : (
-                  <Text style={styles.actionBtnDangerText}>Confirm Cancel</Text>
+                  <Text style={styles.actionBtnDangerText}>Xác nhận hủy</Text>
                 )}
               </TouchableOpacity>
             </View>
