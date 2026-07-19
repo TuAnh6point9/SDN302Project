@@ -134,8 +134,8 @@ export const createOrderWithStockTransaction = async ({
           statusHistory: [{
             status: "pending",
             note: paymentMethod === "ONLINE"
-              ? "Don hang duoc tao va dang cho thanh toan VietQR"
-              : "Don hang duoc tao"
+              ? "Đơn hàng được tạo và đang chờ thanh toán VietQR"
+              : "Đơn hàng được tạo"
           }]
         }
       ],

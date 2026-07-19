@@ -10,6 +10,15 @@ import { createNotification, notifyAdmins } from "../services/notificationServic
 import { awardPurchaseReward } from "../services/rewardService";
 import { InventoryMovement } from "../models/InventoryMovement";
 
+// Chỉ dùng để hiển thị trong message notification, không thay cho OrderStatus enum lưu DB.
+const orderStatusLabelVi: Record<string, string> = {
+  pending: "chờ xác nhận",
+  confirmed: "đã xác nhận",
+  shipping: "đang giao",
+  delivered: "đã giao",
+  cancelled: "đã hủy"
+};
+
 const restoreCancelledOrderStock = async (order: IOrder, changedBy: unknown) => {
   await Promise.all(
     order.items.map(async (item) => {
@@ -157,7 +166,7 @@ export const cancelMyOrder = asyncHandler(async (req: Request, res: Response) =>
 
   await restoreCancelledOrderStock(order, req.user!._id);
 
-  const cancelReason = req.body.cancelReason?.trim() || "Khach hang huy don";
+  const cancelReason = req.body.cancelReason?.trim() || "Khách hàng hủy đơn";
   order.orderStatus = "cancelled";
   order.cancelReason = cancelReason;
   order.statusHistory.push({
@@ -177,14 +186,14 @@ export const cancelMyOrder = asyncHandler(async (req: Request, res: Response) =>
     user: req.user!._id,
     audience: "user",
     type: "order",
-    title: "Don hang da duoc huy",
-    message: `Don ${order.orderCode} da duoc huy.`,
+    title: "Đơn hàng đã được hủy",
+    message: `Đơn ${order.orderCode} đã được hủy.`,
     link: `/orders/${order._id}`
   }).catch(console.error);
   notifyAdmins(
     "order",
-    "Khach hang huy don",
-    `Don ${order.orderCode} da duoc khach hang huy.`,
+    "Khách hàng hủy đơn",
+    `Đơn ${order.orderCode} đã được khách hàng hủy.`,
     "/admin/orders"
   ).catch(console.error);
 
@@ -235,7 +244,7 @@ export const updateOrderStatus = asyncHandler(
       audience: "user",
       type: "order",
       title: "Đơn hàng đã được cập nhật",
-      message: `Đơn ${order.orderCode} hiện ở trạng thái ${order.orderStatus}.`,
+      message: `Đơn ${order.orderCode} hiện ở trạng thái ${orderStatusLabelVi[order.orderStatus] ?? order.orderStatus}.`,
       link: `/orders/${order._id}`
     }).catch(console.error);
 

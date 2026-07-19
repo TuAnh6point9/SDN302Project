@@ -182,7 +182,7 @@ export const createPayosPaymentLink = async (orderId: string, userId: Types.Obje
 
   order.statusHistory.push({
     status: order.orderStatus,
-    note: "Da tao link thanh toan payOS",
+    note: "Đã tạo link thanh toán payOS",
     changedAt: new Date()
   });
   await order.save();
