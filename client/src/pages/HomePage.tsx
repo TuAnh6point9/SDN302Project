@@ -100,22 +100,6 @@ export default function HomePage() {
                 Sách Thực vật
               </Link>
             </div>
-
-            {/* Credibility Counter Grid */}
-            <div className="grid grid-cols-3 gap-4 pt-6 border-t border-white/10 max-w-lg mx-auto lg:mx-0">
-              <div className="space-y-1">
-                <p className="text-2xl md:text-3xl font-extrabold font-heading text-primary-light">12,000+</p>
-                <p className="text-xs text-white/60 font-medium">Sách Trưng Bày</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-2xl md:text-3xl font-extrabold font-heading text-primary-light">4,800+</p>
-                <p className="text-xs text-white/60 font-medium">Bạn Đọc Tin Cậy</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-2xl md:text-3xl font-extrabold font-heading text-primary-light">50+</p>
-                <p className="text-xs text-white/60 font-medium">Đối Tác NXB</p>
-              </div>
-            </div>
           </div>
 
           <div className="lg:col-span-5 flex justify-center relative">

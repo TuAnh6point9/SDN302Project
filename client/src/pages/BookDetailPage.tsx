@@ -23,7 +23,6 @@ export default function BookDetailPage() {
   const [reviews, setReviews] = useState<IReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showSampleModal, setShowSampleModal] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [cartMessage, setCartMessage] = useState('');
   const [cartError, setCartError] = useState('');
@@ -353,12 +352,6 @@ export default function BookDetailPage() {
               <Heart className={`w-4 h-4 ${wishlistIds.has(book._id) ? 'fill-primary text-primary' : ''}`} />
               {wishlistIds.has(book._id) ? 'Bỏ yêu thích' : 'Yêu thích'}
             </button>
-            <button
-              onClick={() => setShowSampleModal(true)}
-              className="btn-outline flex-1 min-w-[200px]"
-            >
-              <BookOpen className="w-4 h-4" /> Đọc thử một phần
-            </button>
             <Link to="/books" className="btn-outline flex-1 min-w-[200px] hover:!bg-primary/5">
               Quay lại danh mục
             </Link>
@@ -436,51 +429,6 @@ export default function BookDetailPage() {
           </div>
         )}
       </div>
-
-      {/* Sample reading Modal */}
-      {showSampleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 max-w-2xl w-full max-h-[80vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-            {/* Header */}
-            <div className="flex justify-between items-center bg-primary text-white p-5">
-              <div className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-primary-light" />
-                <h3 className="font-heading font-bold text-base line-clamp-1">Trích đoạn đọc thử: {book.title}</h3>
-              </div>
-              <button
-                onClick={() => setShowSampleModal(false)}
-                className="p-1.5 hover:bg-white/10 rounded-lg text-white transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 rotate-180" />
-              </button>
-            </div>
-
-            {/* Document Content */}
-            <div className="p-6 md:p-8 overflow-y-auto flex-1 font-serif text-text leading-relaxed text-sm md:text-base space-y-4">
-              <p className="font-bold text-center text-lg text-primary-dark mb-4">Chương I: Lời Ngỏ Từ Tự Nhiên</p>
-              <p>
-                Thế giới quanh ta luôn ẩn chứa những kỳ quan diệu kỳ mà mắt thường đôi khi lướt qua quá nhanh để nhận thấy. Mỗi nhành cây, mỗi loài thú đều đóng vai trò thiết yếu tạo nên bức tranh hài hòa và cân bằng sinh thái tuyệt đối.
-              </p>
-              <p>
-                Tác phẩm này được kỳ công thực hiện nhằm mục tiêu đưa quý độc giả bước gần hơn vào thế giới sống động đó. Qua các trang sách, bạn sẽ bắt gặp những khám phá sinh động, những câu chuyện nghiên cứu thực nghiệm và hệ thống phân loại thực vật, động vật đa dạng một cách trực quan nhất.
-              </p>
-              <p className="italic text-text-secondary text-center text-xs pt-8">
-                --- Hết nội dung trích đoạn trưng bày ---
-              </p>
-            </div>
-
-            {/* Footer */}
-            <div className="bg-background/80 p-4 border-t border-gray-150 text-center">
-              <button
-                onClick={() => setShowSampleModal(false)}
-                className="btn-primary !px-8 !py-2.5 text-sm"
-              >
-                Đóng trích đoạn
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
