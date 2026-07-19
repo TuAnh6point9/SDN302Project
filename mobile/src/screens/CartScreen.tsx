@@ -64,10 +64,10 @@ export default function CartScreen() {
         <View style={styles.emptyIconWrap}>
           <ShoppingBag size={48} color={colors.primary} />
         </View>
-        <Text style={styles.emptyText}>Your cart is empty</Text>
-        <Text style={styles.emptySubText}>Looks like you haven't added any books yet.</Text>
+        <Text style={styles.emptyText}>Giỏ hàng đang trống</Text>
+        <Text style={styles.emptySubText}>Bạn chưa thêm cuốn sách nào vào giỏ.</Text>
         <GreenButton
-          title="Explore Books"
+          title="Khám phá sách"
           onPress={() => navigation.navigate('Tabs', { screen: 'Home' })}
           style={{ marginTop: spacing.md, width: 200 }}
         />
@@ -80,24 +80,24 @@ export default function CartScreen() {
       <TouchableOpacity style={styles.voucherCard}>
         <View style={styles.voucherLeft}>
           <Ticket size={24} color={colors.primary} />
-          <Text style={styles.voucherText}>Apply Voucher</Text>
+          <Text style={styles.voucherText}>Áp dụng voucher</Text>
         </View>
-        <Text style={styles.voucherSelect}>Select</Text>
+        <Text style={styles.voucherSelect}>Chọn</Text>
       </TouchableOpacity>
 
       <View style={styles.summaryCard}>
-        <Text style={styles.summaryTitle}>Order Summary</Text>
+        <Text style={styles.summaryTitle}>Tóm tắt đơn hàng</Text>
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Subtotal</Text>
+          <Text style={styles.summaryLabel}>Tạm tính</Text>
           <Text style={styles.summaryValue}>{formatPrice(subtotal)}</Text>
         </View>
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Shipping</Text>
+          <Text style={styles.summaryLabel}>Phí vận chuyển</Text>
           <Text style={styles.summaryValue}>{formatPrice(shipping)}</Text>
         </View>
         <View style={styles.summaryDivider} />
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryTotalLabel}>Total</Text>
+          <Text style={styles.summaryTotalLabel}>Tổng cộng</Text>
           <Text style={styles.summaryTotalValue}>{formatPrice(total)}</Text>
         </View>
       </View>
@@ -155,11 +155,11 @@ export default function CartScreen() {
 
       <View style={styles.stickyFooter}>
         <View style={styles.stickyTotalRow}>
-          <Text style={styles.stickyTotalLabel}>Total</Text>
+          <Text style={styles.stickyTotalLabel}>Tổng cộng</Text>
           <Text style={styles.stickyTotalValue}>{formatPrice(total)}</Text>
         </View>
         <GreenButton
-          title="Checkout"
+          title="Thanh toán"
           onPress={() => navigation.navigate('Checkout')}
         />
       </View>
