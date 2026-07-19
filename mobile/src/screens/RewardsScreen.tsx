@@ -1,254 +1,350 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useState } from 'react';
+import { Leaf, Info } from 'lucide-react-native';
+import React, { useCallback, useState, useRef } from 'react';
 import {
-  ActivityIndicator, Alert, FlatList, StyleSheet, Text,
-  TouchableOpacity, View,
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { rewardApi } from '../api';
 import { getApiErrorMessage } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { colors, radius } from '../theme/colors';
-import { IRewardHistoryItem, IRewardStatus } from '../types/models';
-import { formatDate, formatPrice, REWARD_REASON_LABELS } from '../utils/format';
+import { colors, radius, spacing } from '../theme/colors';
+import { typography } from '../theme/typography';
+import { IRewardHistoryItem } from '../types/models';
+import { formatDate, formatPrice } from '../utils/format';
 
-// Đồng bộ với client/src/pages/RewardsPage.tsx
-const REDEEM_MIN_POINTS = 100;
-const REDEEM_STEP = 100;
-const POINTS_TO_VND_RATE = 100;
+const REDEEM_POINTS = 1000;
 
 export default function RewardsScreen() {
-  const { user, setUser } = useAuth();
-  const [status, setStatus] = useState<IRewardStatus | null>(null);
+  const { user, refreshUser } = useAuth();
   const [history, setHistory] = useState<IRewardHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [claiming, setClaiming] = useState(false);
-  const [redeemPoints, setRedeemPoints] = useState(REDEEM_MIN_POINTS);
   const [redeeming, setRedeeming] = useState(false);
+  const [redeemError, setRedeemError] = useState('');
+  const [redeemSuccess, setRedeemSuccess] = useState('');
 
-  const fetchData = useCallback(async () => {
+  const flatListRef = useRef<FlatList>(null);
+
+  const fetchHistory = useCallback(async () => {
     try {
-      const [s, h] = await Promise.all([rewardApi.getStatus(), rewardApi.getHistory()]);
-      setStatus(s);
-      setHistory(h);
+      setHistory(await rewardApi.getHistory());
     } catch {
-      // pull-to-refresh bằng cách rời màn hình và quay lại
-    } finally {
-      setLoading(false);
+      // Keep old list
     }
   }, []);
 
   useFocusEffect(
     useCallback(() => {
-      fetchData();
-    }, [fetchData])
+      // Tab navigator không unmount màn hình — xóa thông báo cũ mỗi lần quay lại
+      setRedeemError('');
+      setRedeemSuccess('');
+      Promise.all([fetchHistory(), refreshUser()]).finally(() => setLoading(false));
+    }, [fetchHistory, refreshUser])
   );
 
-  const handleClaim = async () => {
-    setClaiming(true);
-    try {
-      const res = await rewardApi.claim();
-      setUser(res.user);
-      await fetchData();
-      Alert.alert('Đã điểm danh', `+${res.rewardPoints} điểm thưởng hôm nay`);
-    } catch (err) {
-      Alert.alert('Lỗi', getApiErrorMessage(err, 'Không nhận được thưởng'));
-    } finally {
-      setClaiming(false);
-    }
-  };
-
   const handleRedeem = async () => {
+    setRedeemError('');
+    setRedeemSuccess('');
+    if ((user?.points ?? 0) < REDEEM_POINTS) {
+      setRedeemError('Bạn chưa đủ điểm để đổi voucher này');
+      return;
+    }
     setRedeeming(true);
     try {
-      const res = await rewardApi.redeem(redeemPoints);
-      setUser(res.user);
-      await fetchData();
-      Alert.alert(
-        'Đổi voucher thành công',
-        `Mã voucher của bạn: ${res.voucher.code}\nGiá trị: ${formatPrice(res.voucher.value)}\nDùng được ngay ở bước đặt hàng.`
-      );
+      const res = await rewardApi.redeem(REDEEM_POINTS);
+      setRedeemSuccess(`Đổi thành công voucher ${res.voucher.code} — lưu lại mã này ngay, mã chỉ hiển thị 1 lần!`);
+      await Promise.all([fetchHistory(), refreshUser()]);
     } catch (err) {
-      Alert.alert('Lỗi', getApiErrorMessage(err, 'Không đổi được voucher'));
+      setRedeemError(getApiErrorMessage(err, 'Không đổi được điểm'));
     } finally {
       setRedeeming(false);
     }
   };
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
+  const handleScrollToHistory = () => {
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+  };
 
-  const currentPoints = user?.points ?? 0;
-  const canRedeem = currentPoints >= redeemPoints;
+  const getReasonLabel = (reason: string) => {
+    if (reason === 'purchase') return 'Thưởng mua hàng';
+    if (reason === 'daily_login') return 'Điểm danh hàng ngày';
+    if (reason === 'review') return 'Viết đánh giá';
+    if (reason === 'redeem_voucher') return 'Đổi điểm lấy voucher';
+    return reason;
+  };
+
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      <View style={styles.heroCard}>
+        <Leaf size={32} color={colors.surface} style={styles.heroIcon} />
+        <Text style={styles.pointsText}>{user?.points ?? 0}</Text>
+        <Text style={styles.pointsLabel}>điểm thưởng hiện có</Text>
+        
+        <TouchableOpacity style={styles.historyScrollBtn} onPress={handleScrollToHistory}>
+          <Text style={styles.historyScrollText}>Lịch sử điểm</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Text style={styles.sectionTitle}>Đổi điểm lấy voucher</Text>
+      <Text style={styles.sectionSubtitle}>{REDEEM_POINTS} điểm = voucher {formatPrice(REDEEM_POINTS * 10)}</Text>
+
+      <View style={styles.redeemCard}>
+        <View style={styles.stepperValueCol}>
+          <Text style={styles.redeemValText}>{REDEEM_POINTS}</Text>
+          <Text style={styles.redeemCashText}>(- {formatPrice(REDEEM_POINTS * 10)})</Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.redeemBtn}
+          onPress={handleRedeem}
+          disabled={redeeming}
+        >
+          {redeeming ? (
+            <ActivityIndicator color={colors.surface} />
+          ) : (
+            <Text style={styles.redeemBtnText}>Đổi điểm</Text>
+          )}
+        </TouchableOpacity>
+        {redeemError ? <Text style={styles.redeemError}>{redeemError}</Text> : null}
+        {redeemSuccess ? <Text style={styles.redeemSuccess}>{redeemSuccess}</Text> : null}
+      </View>
+
+      <Text style={[styles.sectionTitle, { marginTop: spacing.lg }]}>Lịch sử điểm</Text>
+    </View>
+  );
 
   return (
-    <FlatList
-      style={styles.safe}
-      data={history}
-      keyExtractor={(item) => item._id}
-      contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
-      ListHeaderComponent={
-        <View style={{ gap: 12, marginBottom: 12 }}>
-          <View style={styles.pointsCard}>
-            <Ionicons name="leaf" size={28} color="#fff" />
-            <Text style={styles.pointsValue}>{currentPoints}</Text>
-            <Text style={styles.pointsLabel}>điểm thưởng hiện có</Text>
-            {status?.canClaim ? (
-              <TouchableOpacity style={styles.claimBtn} onPress={handleClaim} disabled={claiming}>
-                {claiming
-                  ? <ActivityIndicator color={colors.primaryDark} size="small" />
-                  : <Text style={styles.claimText}>Điểm danh hôm nay +{status.rewardPoints}</Text>}
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.claimedPill}>
-                <Ionicons name="checkmark-circle" size={15} color="#fff" />
-                <Text style={styles.claimedText}>Hôm nay đã điểm danh</Text>
-              </View>
-            )}
-          </View>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+      <View style={styles.navBar}>
+        <View style={{ width: 40 }} />
+        <Text style={styles.navTitle}>Điểm thưởng</Text>
+        <TouchableOpacity style={styles.infoBtn}>
+          <Info size={22} color={colors.primary} />
+        </TouchableOpacity>
+      </View>
 
-          <View style={styles.redeemCard}>
-            <Text style={styles.sectionTitle}>Đổi điểm lấy voucher</Text>
-            <Text style={styles.redeemHint}>
-              {REDEEM_MIN_POINTS} điểm = voucher {formatPrice(REDEEM_MIN_POINTS * POINTS_TO_VND_RATE)}
-            </Text>
-            <View style={styles.redeemRow}>
-              <TouchableOpacity
-                style={styles.stepBtn}
-                onPress={() => setRedeemPoints((p) => Math.max(REDEEM_MIN_POINTS, p - REDEEM_STEP))}
-              >
-                <Ionicons name="remove" size={18} color={colors.text} />
-              </TouchableOpacity>
-              <View style={styles.redeemValueBox}>
-                <Text style={styles.redeemValue}>{redeemPoints} điểm</Text>
-                <Text style={styles.redeemEquals}>= {formatPrice(redeemPoints * POINTS_TO_VND_RATE)}</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.stepBtn}
-                onPress={() => setRedeemPoints((p) => p + REDEEM_STEP)}
-              >
-                <Ionicons name="add" size={18} color={colors.text} />
-              </TouchableOpacity>
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : (
+        <FlatList
+          ref={flatListRef}
+          data={history}
+          keyExtractor={(item) => item._id}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={renderHeader}
+          ListEmptyComponent={
+            <View style={styles.emptyWrap}>
+              <Text style={styles.emptyText}>Chưa có lịch sử điểm.</Text>
             </View>
-            <TouchableOpacity
-              style={[styles.redeemBtn, (!canRedeem || redeeming) && styles.redeemBtnDisabled]}
-              onPress={handleRedeem}
-              disabled={!canRedeem || redeeming}
-            >
-              {redeeming
-                ? <ActivityIndicator color="#fff" size="small" />
-                : <Text style={styles.redeemBtnText}>
-                    {canRedeem ? 'Đổi voucher' : 'Không đủ điểm'}
-                  </Text>}
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.sectionTitle}>Lịch sử điểm</Text>
-        </View>
-      }
-      ListEmptyComponent={
-        <Text style={styles.emptyText}>Chưa có giao dịch điểm nào</Text>
-      }
-      renderItem={({ item }) => (
-        <View style={styles.historyItem}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.historyReason}>{REWARD_REASON_LABELS[item.reason] ?? item.reason}</Text>
-            <Text style={styles.historyDate}>{formatDate(item.createdAt)}</Text>
-          </View>
-          <View style={{ alignItems: 'flex-end' }}>
-            <Text style={[styles.historyPoints, { color: item.points >= 0 ? colors.primary : colors.error }]}>
-              {item.points >= 0 ? '+' : ''}{item.points}
-            </Text>
-            {item.balanceAfter != null && (
-              <Text style={styles.historyBalance}>Số dư: {item.balanceAfter}</Text>
-            )}
-          </View>
-        </View>
+          }
+          renderItem={({ item }) => {
+            const isPositive = item.points > 0;
+            return (
+              <View style={styles.historyRow}>
+                <View style={styles.historyLeft}>
+                  <Text style={styles.historyReason}>{getReasonLabel(item.reason)}</Text>
+                  <Text style={styles.historyDate}>{formatDate(item.createdAt)}</Text>
+                </View>
+                <View style={styles.historyRight}>
+                  <Text style={[styles.historyPoints, { color: isPositive ? colors.primary : colors.error }]}>
+                    {isPositive ? `+${item.points}` : item.points}
+                  </Text>
+                  {item.balanceAfter !== undefined && (
+                    <Text style={styles.historyBalance}>Số dư: {item.balanceAfter}</Text>
+                  )}
+                </View>
+              </View>
+            );
+          }}
+        />
       )}
-    />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
-  pointsCard: {
-    backgroundColor: colors.primary,
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    gap: 4,
+  listContent: { padding: spacing.md, paddingBottom: spacing.xl },
+  headerContainer: {
+    paddingTop: spacing.xs,
   },
-  pointsValue: { fontSize: 40, fontWeight: '800', color: '#fff' },
-  pointsLabel: { fontSize: 13, color: '#D9EAD9' },
-  claimBtn: {
-    backgroundColor: '#fff',
-    borderRadius: radius.pill,
-    paddingHorizontal: 18,
-    paddingVertical: 9,
-    marginTop: 10,
-  },
-  claimText: { color: colors.primaryDark, fontWeight: '800', fontSize: 13 },
-  claimedPill: {
+  navBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: 10,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: radius.pill,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-  },
-  claimedText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-  redeemCard: {
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    height: 56,
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 16,
-    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  sectionTitle: { fontSize: 15, fontWeight: '800', color: colors.text },
-  redeemHint: { fontSize: 12, color: colors.textSecondary },
-  redeemRow: { flexDirection: 'row', alignItems: 'center', gap: 12, justifyContent: 'center' },
-  stepBtn: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    padding: 10,
-    backgroundColor: colors.background,
+  navTitle: {
+    ...typography.h3,
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
   },
-  redeemValueBox: { alignItems: 'center', minWidth: 120 },
-  redeemValue: { fontSize: 18, fontWeight: '800', color: colors.text },
-  redeemEquals: { fontSize: 12, color: colors.textSecondary },
-  redeemBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    height: 44,
+  infoBtn: {
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  redeemBtnDisabled: { backgroundColor: colors.disabled },
-  redeemBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  emptyText: { fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 8 },
-  historyItem: {
-    flexDirection: 'row',
+  heroCard: {
+    backgroundColor: colors.primary,
+    borderRadius: 24,
+    paddingVertical: 36,
+    paddingHorizontal: spacing.lg,
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'center',
+    position: 'relative',
+    marginBottom: spacing.lg,
+  },
+  heroIcon: {
+    marginBottom: spacing.sm,
+  },
+  pointsText: {
+    ...typography.largeTitle,
+    fontSize: 54,
+    color: colors.surface,
+    fontWeight: '800',
+    lineHeight: 60,
+  },
+  pointsLabel: {
+    ...typography.caption,
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginBottom: spacing.md,
+  },
+  historyScrollBtn: {
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderRadius: radius.pill,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    backgroundColor: 'transparent',
+  },
+  historyScrollText: {
+    ...typography.h3,
+    fontSize: 13,
+    color: colors.surface,
+    fontWeight: '600',
+  },
+  sectionTitle: {
+    ...typography.h2,
+    fontSize: 18,
+    color: colors.text,
+    marginBottom: 2,
+  },
+  sectionSubtitle: {
+    ...typography.caption,
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+  },
+  redeemCard: {
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 12,
-    marginBottom: 8,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    gap: spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  historyReason: { fontSize: 13, fontWeight: '700', color: colors.text },
-  historyDate: { fontSize: 11, color: colors.textPlaceholder },
-  historyPoints: { fontSize: 15, fontWeight: '800' },
-  historyBalance: { fontSize: 11, color: colors.textSecondary },
+  stepperValueCol: {
+    alignItems: 'center',
+  },
+  redeemValText: {
+    ...typography.h2,
+    fontSize: 22,
+    color: colors.text,
+    fontWeight: '700',
+  },
+  redeemCashText: {
+    ...typography.caption,
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  redeemBtn: {
+    backgroundColor: colors.primary,
+    height: 52,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  redeemBtnText: {
+    ...typography.h3,
+    fontSize: 16,
+    color: colors.surface,
+    fontWeight: '700',
+  },
+  redeemError: {
+    ...typography.caption,
+    fontSize: 13,
+    color: colors.error,
+    textAlign: 'center',
+  },
+  redeemSuccess: {
+    ...typography.caption,
+    fontSize: 13,
+    color: colors.primary,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  emptyWrap: {
+    paddingVertical: spacing.xl,
+    alignItems: 'center',
+  },
+  emptyText: {
+    ...typography.body,
+    color: colors.textSecondary,
+  },
+  historyRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  historyLeft: {
+    gap: 4,
+    flex: 1,
+  },
+  historyRight: {
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  historyReason: {
+    ...typography.h3,
+    fontSize: 15,
+    color: colors.text,
+  },
+  historyDate: {
+    ...typography.caption,
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  historyPoints: {
+    ...typography.h2,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  historyBalance: {
+    ...typography.caption,
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
 });
