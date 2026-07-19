@@ -312,7 +312,7 @@ export default function BookDetailPage() {
                 value={quantity}
                 onChange={(event) => setQuantity(Math.max(1, Number(event.target.value)))}
                 className="input-field !w-24 !py-2 text-sm"
-                disabled={book.stockQuantity <= 0}
+                disabled={book.stockQuantity <= 0 || !user}
               />
               <span className="text-xs text-text-secondary">Còn {book.stockQuantity} cuốn</span>
             </div>
