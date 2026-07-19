@@ -1,28 +1,36 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Leaf, Search as SearchIcon, SlidersHorizontal, ChevronRight } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator, FlatList, StyleSheet, Text, TextInput,
-  TouchableOpacity, View,
+  ActivityIndicator,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { bookApi, categoryApi } from '../api';
 import BookCard from '../components/BookCard';
+import GreenInput from '../components/GreenInput';
 import { RootStackParamList } from '../navigation/types';
-import { colors, radius } from '../theme/colors';
+import { colors, radius, spacing } from '../theme/colors';
+import { typography } from '../theme/typography';
 import { IBook, ICategory } from '../types/models';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type SortValue = 'newest' | 'price_asc' | 'price_desc' | 'featured';
 
-const SORTS: Array<{ label: string; value: SortValue }> = [
+const PAGE_SIZE = 10;
+
+const SORT_OPTIONS: { label: string; value: SortValue }[] = [
   { label: 'Mới nhất', value: 'newest' },
   { label: 'Nổi bật', value: 'featured' },
   { label: 'Giá tăng', value: 'price_asc' },
   { label: 'Giá giảm', value: 'price_desc' },
 ];
-
-const PAGE_SIZE = 10;
 
 export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
@@ -82,80 +90,108 @@ export default function HomeScreen() {
     }
   };
 
-  // Danh mục cha là đủ cho filter, không cần cây đầy đủ như web
   const rootCategories = categories.filter((c) => !c.parent);
 
-  return (
-    <View style={styles.safe}>
-      <View style={styles.searchRow}>
-        <View style={styles.searchBox}>
-          <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Tìm sách, tác giả..."
-            placeholderTextColor={colors.textPlaceholder}
-            value={search}
-            onChangeText={setSearch}
-            returnKeyType="search"
-          />
-          {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
-          )}
-        </View>
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      {/* Top Logo Header */}
+      <View style={styles.logoRow}>
+        <Leaf size={28} color={colors.primary} fill={colors.primary} />
+        <Text style={styles.logoText}>GreenLeaf Books</Text>
       </View>
 
-      <View>
-        <FlatList
-          horizontal
-          data={[{ _id: '', name: 'Tất cả', slug: '' } as ICategory, ...rootCategories]}
-          keyExtractor={(c) => c._id || 'all'}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chipList}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[styles.chip, category === item._id && styles.chipActive]}
-              onPress={() => setCategory(item._id)}
-            >
-              <Text style={[styles.chipText, category === item._id && styles.chipTextActive]}>
-                {item.name}
-              </Text>
-            </TouchableOpacity>
-          )}
+      {/* Search and Filter */}
+      <View style={styles.searchRow}>
+        <GreenInput
+          containerStyle={styles.searchFlex}
+          placeholder="Tìm sách, tác giả..."
+          value={search}
+          onChangeText={setSearch}
+          isSearch
+        />
+        <TouchableOpacity style={styles.filterBtn}>
+          <SlidersHorizontal size={20} color={colors.surface} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Hero Banner */}
+      <View style={styles.heroBanner}>
+        <View style={styles.heroContent}>
+          <Text style={styles.heroTitle}>Tri thức xanh</Text>
+          <Text style={styles.heroTitleLight}>Cuộc sống xanh</Text>
+          <Text style={styles.heroSubtitle} numberOfLines={2}>
+            Khám phá những cuốn sách hay về thiên nhiên và cuộc sống
+          </Text>
+          <TouchableOpacity style={styles.heroCta}>
+            <Text style={styles.heroCtaText}>Khám phá ngay</Text>
+          </TouchableOpacity>
+        </View>
+        <Image
+          source={{ uri: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&q=80' }}
+          style={styles.heroImage}
         />
       </View>
 
-      <View style={styles.sortRow}>
-        {SORTS.map((s) => (
+      {/* Categories Row */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Danh mục</Text>
+      </View>
+      <FlatList
+        horizontal
+        data={[{ _id: '', name: 'Tất cả', slug: '' } as ICategory, ...rootCategories]}
+        keyExtractor={(c) => c._id || 'all'}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipList}
+        renderItem={({ item }) => (
           <TouchableOpacity
-            key={s.value}
-            style={[styles.sortChip, sort === s.value && styles.sortChipActive]}
-            onPress={() => setSort(s.value)}
+            style={[styles.chip, category === item._id && styles.chipActive]}
+            onPress={() => setCategory(item._id)}
           >
-            <Text style={[styles.sortText, sort === s.value && styles.sortTextActive]}>
-              {s.label}
+            <Text style={[styles.chipText, category === item._id && styles.chipTextActive]}>
+              {item.name}
             </Text>
           </TouchableOpacity>
-        ))}
-      </View>
+        )}
+      />
 
-      {loading ? (
+      {/* Sort Options Row */}
+      <FlatList
+        horizontal
+        data={SORT_OPTIONS}
+        keyExtractor={(item) => item.value}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={[styles.chipList, { marginTop: spacing.xs, marginBottom: spacing.sm }]}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={[styles.sortChip, sort === item.value && styles.sortChipActive]}
+            onPress={() => setSort(item.value)}
+          >
+            <Text style={[styles.sortChipText, sort === item.value && styles.sortChipTextActive]}>
+              {item.label}
+            </Text>
+          </TouchableOpacity>
+        )}
+      />
+
+      {/* Section Featured Header */}
+      <View style={styles.featuredHeaderRow}>
+        <Text style={styles.sectionTitle}>Sách nổi bật</Text>
+        <TouchableOpacity style={styles.seeAllBtn} onPress={() => {}}>
+          <Text style={styles.seeAllText}>Xem tất cả</Text>
+          <ChevronRight size={16} color={colors.primary} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+      {error ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      ) : error ? (
-        <View style={styles.center}>
-          <Ionicons name="cloud-offline-outline" size={48} color={colors.textPlaceholder} />
           <Text style={styles.emptyText}>{error}</Text>
           <TouchableOpacity style={styles.retryBtn} onPress={() => fetchBooks(1, false)}>
             <Text style={styles.retryText}>Thử lại</Text>
           </TouchableOpacity>
-        </View>
-      ) : books.length === 0 ? (
-        <View style={styles.center}>
-          <Ionicons name="book-outline" size={48} color={colors.textPlaceholder} />
-          <Text style={styles.emptyText}>Không tìm thấy sách phù hợp</Text>
         </View>
       ) : (
         <FlatList
@@ -163,67 +199,217 @@ export default function HomeScreen() {
           keyExtractor={(b) => b._id}
           numColumns={2}
           contentContainerStyle={styles.grid}
+          ListHeaderComponent={renderHeader}
           onEndReached={loadMore}
           onEndReachedThreshold={0.4}
           ListFooterComponent={
-            loadingMore ? <ActivityIndicator color={colors.primary} style={{ margin: 16 }} /> : null
+            loadingMore || loading ? (
+              <ActivityIndicator color={colors.primary} style={{ margin: spacing.md }} />
+            ) : null
+          }
+          ListEmptyComponent={
+            !loading ? (
+              <View style={styles.center}>
+                <Text style={styles.emptyText}>Không tìm thấy sách phù hợp</Text>
+              </View>
+            ) : null
           }
           renderItem={({ item }) => (
             <BookCard book={item} onPress={() => navigation.navigate('BookDetail', { slug: item.slug })} />
           )}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  searchRow: { paddingHorizontal: 16, paddingVertical: 12 },
-  searchBox: {
+  headerContainer: {
+    paddingTop: spacing.md,
+  },
+  logoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: colors.surface,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.md,
+  },
+  logoText: {
+    ...typography.h2,
+    fontSize: 20,
+    color: colors.primary,
+    fontWeight: '800',
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  searchFlex: {
+    flex: 1,
+  },
+  filterBtn: {
+    width: 52,
+    height: 52,
     borderRadius: radius.md,
-    paddingHorizontal: 12,
-    height: 44,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  searchInput: { flex: 1, fontSize: 15, color: colors.text },
-  chipList: { paddingHorizontal: 16, gap: 8, paddingBottom: 4 },
+  heroBanner: {
+    marginHorizontal: spacing.md,
+    height: 190,
+    backgroundColor: '#E8F2E6',
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    marginBottom: spacing.lg,
+  },
+  heroContent: {
+    flex: 1,
+    padding: spacing.md,
+    justifyContent: 'center',
+  },
+  heroTitle: {
+    ...typography.h2,
+    color: colors.primary,
+    marginBottom: 0,
+    fontSize: 20,
+  },
+  heroTitleLight: {
+    ...typography.h2,
+    fontWeight: '800',
+    color: colors.primary,
+    marginBottom: 4,
+    fontSize: 20,
+  },
+  heroSubtitle: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 16,
+    marginBottom: spacing.sm,
+  },
+  heroCta: {
+    backgroundColor: colors.primary,
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm - 2,
+    borderRadius: radius.pill,
+  },
+  heroCtaText: {
+    ...typography.h3,
+    fontSize: 12,
+    color: colors.surface,
+  },
+  heroImage: {
+    width: 130,
+    height: '100%',
+  },
+  sectionHeader: {
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  sectionTitle: {
+    ...typography.h3,
+    fontSize: 18,
+  },
+  chipList: {
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
+    paddingBottom: spacing.sm,
+  },
   chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText: { fontSize: 13, color: colors.textSecondary, fontWeight: '600' },
-  chipTextActive: { color: '#fff' },
-  sortRow: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, gap: 8 },
-  sortChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  sortChipActive: { borderColor: colors.primary, backgroundColor: '#E8F1E9' },
-  sortText: { fontSize: 12, color: colors.textSecondary, fontWeight: '600' },
-  sortTextActive: { color: colors.primaryDark },
-  grid: { paddingHorizontal: 10, paddingBottom: 24 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
-  emptyText: { fontSize: 14, color: colors.textSecondary, textAlign: 'center' },
-  retryBtn: {
     paddingHorizontal: 20,
     paddingVertical: 10,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  chipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  chipText: {
+    ...typography.body,
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  chipTextActive: {
+    color: colors.surface,
+  },
+  sortChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  sortChipActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.surface,
+  },
+  sortChipText: {
+    ...typography.body,
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  sortChipTextActive: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  featuredHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  seeAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  seeAllText: {
+    ...typography.body,
+    fontSize: 13,
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  grid: {
+    paddingHorizontal: spacing.sm,
+    paddingBottom: spacing.xl,
+  },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xl,
+    minHeight: 200,
+  },
+  emptyText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  retryBtn: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
     backgroundColor: colors.primary,
     borderRadius: radius.md,
   },
-  retryText: { color: '#fff', fontWeight: '700' },
+  retryText: {
+    color: colors.surface,
+    fontWeight: 'bold',
+  },
 });

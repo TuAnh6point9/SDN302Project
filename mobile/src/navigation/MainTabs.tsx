@@ -1,5 +1,5 @@
-import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Leaf, ShoppingCart, Gift, Receipt, User } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useCart } from '../context/CartContext';
@@ -30,19 +30,33 @@ export default function MainTabs() {
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
-        headerStyle: { backgroundColor: colors.primary },
-        headerTintColor: '#fff',
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
+          elevation: 0,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+        },
+        headerStyle: { backgroundColor: colors.surface, elevation: 0, shadowOpacity: 0 },
+        headerTintColor: colors.text,
         headerTitleStyle: { fontWeight: '700' },
+        headerTitleAlign: 'center',
       }}
     >
       <Tab.Screen
         name="Home"
         component={HomeScreen}
         options={{
-          title: 'GreenLeaf Books',
-          tabBarLabel: 'Trang chủ',
-          tabBarIcon: ({ color, size }) => <Ionicons name="leaf-outline" size={size} color={color} />,
+          title: 'Trang chủ',
+          headerShown: false,
+          tabBarIcon: ({ color, focused, size }) => (
+            <Leaf size={size} color={color} fill="none" />
+          ),
         }}
       />
       <Tab.Screen
@@ -50,10 +64,9 @@ export default function MainTabs() {
         component={CartScreen}
         options={{
           title: 'Giỏ hàng',
-          tabBarLabel: 'Giỏ hàng',
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color, focused, size }) => (
             <View>
-              <Ionicons name="cart-outline" size={size} color={color} />
+              <ShoppingCart size={size} color={color} fill={focused ? color : 'none'} />
               <CartBadge count={totalItems} />
             </View>
           ),
@@ -64,8 +77,9 @@ export default function MainTabs() {
         component={RewardsScreen}
         options={{
           title: 'Điểm thưởng',
-          tabBarLabel: 'Điểm thưởng',
-          tabBarIcon: ({ color, size }) => <Ionicons name="gift-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, focused, size }) => (
+            <Gift size={size} color={color} fill={focused ? color : 'none'} />
+          ),
         }}
       />
       <Tab.Screen
@@ -73,8 +87,9 @@ export default function MainTabs() {
         component={OrdersScreen}
         options={{
           title: 'Đơn hàng',
-          tabBarLabel: 'Đơn hàng',
-          tabBarIcon: ({ color, size }) => <Ionicons name="receipt-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, focused, size }) => (
+            <Receipt size={size} color={color} fill={focused ? color : 'none'} />
+          ),
         }}
       />
       <Tab.Screen
@@ -82,8 +97,10 @@ export default function MainTabs() {
         component={ProfileScreen}
         options={{
           title: 'Tài khoản',
-          tabBarLabel: 'Tài khoản',
-          tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
+          headerShown: false,
+          tabBarIcon: ({ color, focused, size }) => (
+            <User size={size} color={color} fill={focused ? color : 'none'} />
+          ),
         }}
       />
     </Tab.Navigator>
@@ -93,15 +110,17 @@ export default function MainTabs() {
 const styles = StyleSheet.create({
   badge: {
     position: 'absolute',
-    right: -6,
-    top: -4,
+    right: -8,
+    top: -6,
     backgroundColor: colors.error,
     borderRadius: 10,
     minWidth: 18,
     height: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 3,
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: colors.surface,
   },
-  badgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  badgeText: { color: colors.surface, fontSize: 10, fontWeight: 'bold' },
 });

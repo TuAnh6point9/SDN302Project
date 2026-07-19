@@ -1,8 +1,10 @@
-import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Heart, Star, ShoppingCart } from 'lucide-react-native';
 import { resolveImageUrl } from '../api/client';
+import { useCart } from '../context/CartContext';
 import { colors, radius } from '../theme/colors';
+import { typography } from '../theme/typography';
 import { IBook } from '../types/models';
 import { formatPrice } from '../utils/format';
 
@@ -12,36 +14,67 @@ interface Props {
 }
 
 export default function BookCard({ book, onPress }: Props) {
+  const { addItem } = useCart();
+  
   const price = book.discountPrice ?? book.price;
   const hasDiscount = book.discountPrice != null && book.discountPrice < book.price;
+  const discountPercent = hasDiscount
+    ? Math.round(((book.price - book.discountPrice!) / book.price) * 100)
+    : 0;
   const outOfStock = book.stockQuantity <= 0;
 
+  const handleAddToCart = (e: any) => {
+    e.stopPropagation();
+    addItem(book._id, 1).catch(() => {});
+  };
+
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
       <View style={styles.imageWrap}>
         <Image
           source={{ uri: resolveImageUrl(book.images[0]) }}
           style={styles.image}
           resizeMode="cover"
         />
+        {hasDiscount ? (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>-{discountPercent}%</Text>
+          </View>
+        ) : book.isFeatured ? (
+          <View style={[styles.badge, { backgroundColor: colors.success }]}>
+            <Text style={styles.badgeText}>Mới</Text>
+          </View>
+        ) : null}
+        <TouchableOpacity style={styles.favoriteBtn}>
+          <Heart size={20} color={colors.textSecondary} />
+        </TouchableOpacity>
         {outOfStock && (
           <View style={styles.outOfStock}>
-            <Text style={styles.outOfStockText}>Hết hàng</Text>
+            <Text style={styles.outOfStockText}>Out of Stock</Text>
           </View>
         )}
       </View>
       <View style={styles.body}>
-        <Text style={styles.title} numberOfLines={2}>{book.title}</Text>
-        <Text style={styles.author} numberOfLines={1}>{book.author}</Text>
+        <Text style={styles.title} numberOfLines={2}>
+          {book.title}
+        </Text>
+        <Text style={styles.author} numberOfLines={1}>
+          {book.author}
+        </Text>
         <View style={styles.ratingRow}>
-          <Ionicons name="star" size={12} color={colors.warning} />
+          <Star size={14} color={colors.warning} fill={colors.warning} />
           <Text style={styles.rating}>
-            {book.ratingAverage.toFixed(1)} ({book.numReviews})
+            {book.ratingAverage.toFixed(1)} <Text style={styles.reviewCount}>({book.numReviews})</Text>
           </Text>
         </View>
         <View style={styles.priceRow}>
-          <Text style={styles.price}>{formatPrice(price)}</Text>
-          {hasDiscount && <Text style={styles.oldPrice}>{formatPrice(book.price)}</Text>}
+          <View style={styles.priceLeft}>
+            <Text style={styles.price}>{formatPrice(price)}</Text>
+            {hasDiscount && <Text style={styles.oldPrice}>{formatPrice(book.price)}</Text>}
+          </View>
+          <TouchableOpacity style={styles.cartBtn} onPress={handleAddToCart}>
+            <ShoppingCart size={16} color={colors.primary} />
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
@@ -51,15 +84,52 @@ export default function BookCard({ book, onPress }: Props) {
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    margin: 6,
+    margin: 8,
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: radius.lg,
+    borderWidth: 0, // Using shadow instead of border
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
     overflow: 'hidden',
   },
-  imageWrap: { position: 'relative' },
-  image: { width: '100%', aspectRatio: 3 / 4, backgroundColor: colors.background },
+  imageWrap: {
+    position: 'relative',
+    height: 200,
+    width: '100%',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: colors.divider,
+  },
+  badge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    backgroundColor: colors.error,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  badgeText: {
+    color: colors.surface,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  favoriteBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   outOfStock: {
     position: 'absolute',
     inset: 0,
@@ -67,13 +137,67 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  outOfStockText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  body: { padding: 10, gap: 3 },
-  title: { fontSize: 13, fontWeight: '600', color: colors.text, minHeight: 34 },
-  author: { fontSize: 11, color: colors.textSecondary },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  rating: { fontSize: 11, color: colors.textSecondary },
-  priceRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
-  price: { fontSize: 14, fontWeight: '700', color: colors.primary },
-  oldPrice: { fontSize: 11, color: colors.textPlaceholder, textDecorationLine: 'line-through' },
+  outOfStockText: {
+    color: colors.surface,
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  body: {
+    padding: 12,
+    gap: 4,
+  },
+  title: {
+    ...typography.h3,
+    fontSize: 15,
+    lineHeight: 20,
+    minHeight: 40,
+  },
+  author: {
+    ...typography.caption,
+    color: colors.textSecondary,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  rating: {
+    ...typography.caption,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  reviewCount: {
+    color: colors.textSecondary,
+    fontWeight: 'normal',
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  priceLeft: {
+    flexDirection: 'column',
+    gap: 2,
+  },
+  price: {
+    ...typography.h2,
+    fontSize: 16,
+    color: colors.primary,
+  },
+  oldPrice: {
+    ...typography.caption,
+    textDecorationLine: 'line-through',
+    color: colors.textSecondary,
+    fontSize: 12,
+  },
+  cartBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#E8F5E9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
