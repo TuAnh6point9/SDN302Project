@@ -6,6 +6,7 @@ import DailyRewardModal from '../components/DailyRewardModal';
 import { useAuth } from '../context/AuthContext';
 import BookDetailScreen from '../screens/BookDetailScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import LoginScreen from '../screens/LoginScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
@@ -48,6 +49,7 @@ export default function AppNavigator() {
             <RootStack.Screen name="OrderDetail" component={OrderDetailScreen} options={{ title: 'Chi tiết đơn hàng' }} />
             <RootStack.Screen name="Wishlist" component={WishlistScreen} options={{ title: 'Yêu thích' }} />
             <RootStack.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Thông báo' }} />
+            <RootStack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: 'Chỉnh sửa hồ sơ' }} />
           </RootStack.Navigator>
           <DailyRewardModal />
         </>

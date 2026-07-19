@@ -66,6 +66,11 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.menu}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('EditProfile')}>
+          <Ionicons name="person-outline" size={20} color={colors.text} />
+          <Text style={styles.menuText}>Chỉnh sửa hồ sơ</Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.textPlaceholder} />
+        </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Wishlist')}>
           <Ionicons name="heart-outline" size={20} color={colors.text} />
           <Text style={styles.menuText}>Sách yêu thích</Text>
