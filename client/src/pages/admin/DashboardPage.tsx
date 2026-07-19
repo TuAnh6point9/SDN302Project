@@ -1,16 +1,43 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, BookOpen, ClipboardList, DollarSign, Star } from 'lucide-react';
+import { AlertTriangle, BookOpen, ClipboardList, DollarSign, Star, TrendingUp, Trophy } from 'lucide-react';
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { bookApi } from '../../api/bookApi';
 import { orderApi } from '../../api/orderApi';
+import { statsApi, type IAdminOverview } from '../../api/statsApi';
 import type { IBook, IOrder } from '../../types';
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
+const formatCompact = (value: number) =>
+  new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
+
+const formatDayLabel = (day: string) => {
+  const [, month, date] = day.split('-');
+  return `${date}/${month}`;
+};
+
 export default function DashboardPage() {
   const [books, setBooks] = useState<IBook[]>([]);
   const [orders, setOrders] = useState<IOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [overview, setOverview] = useState<IAdminOverview | null>(null);
+
+  useEffect(() => {
+    // Thống kê từ endpoint aggregation riêng; lỗi thì ẩn section chart,
+    // phần dashboard cũ vẫn hiển thị bình thường.
+    statsApi.getAdminOverview().then(setOverview).catch(console.error);
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -118,6 +145,100 @@ export default function DashboardPage() {
           <p className="text-xl font-bold text-text mt-1">{stats.featuredBooks}</p>
         </div>
       </div>
+
+      {overview && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <section className="bg-white border border-gray-200/60 rounded-2xl shadow-sm p-5 space-y-4">
+            <h3 className="font-heading font-bold text-base text-text flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary" /> Doanh thu 14 ngày (đơn đã giao)
+            </h3>
+            <ResponsiveContainer width="100%" height={260}>
+              <AreaChart data={overview.revenueByDay} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="revenueFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#f3f4f6" vertical={false} />
+                <XAxis
+                  dataKey="day"
+                  tickFormatter={formatDayLabel}
+                  tick={{ fontSize: 11, fill: '#6b7280' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tickFormatter={(value) => formatCompact(Number(value))}
+                  tick={{ fontSize: 11, fill: '#6b7280' }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={48}
+                />
+                <Tooltip
+                  formatter={(value) => [formatPrice(Number(value)), 'Doanh thu']}
+                  labelFormatter={(label) => `Ngày ${formatDayLabel(String(label))}`}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  name="Doanh thu"
+                  stroke="#059669"
+                  strokeWidth={2}
+                  fill="url(#revenueFill)"
+                  activeDot={{ r: 4 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </section>
+
+          <section className="bg-white border border-gray-200/60 rounded-2xl shadow-sm p-5 space-y-4">
+            <h3 className="font-heading font-bold text-base text-text flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-primary" /> Top 5 sách bán chạy
+            </h3>
+            {overview.topBooks.length === 0 ? (
+              <p className="text-sm text-text-secondary">Chưa có đơn hàng đã giao nào.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart
+                  data={overview.topBooks}
+                  layout="vertical"
+                  margin={{ top: 8, right: 32, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid stroke="#f3f4f6" horizontal={false} />
+                  <XAxis
+                    type="number"
+                    allowDecimals={false}
+                    tick={{ fontSize: 11, fill: '#6b7280' }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="title"
+                    width={150}
+                    tick={{ fontSize: 11, fill: '#374151' }}
+                    tickFormatter={(title) =>
+                      String(title).length > 20 ? `${String(title).slice(0, 19)}…` : String(title)
+                    }
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip formatter={(value) => [`${Number(value)} cuốn`, 'Đã bán']} />
+                  <Bar
+                    dataKey="quantity"
+                    name="Đã bán"
+                    fill="#10b981"
+                    radius={[0, 4, 4, 0]}
+                    barSize={18}
+                    label={{ position: 'right', fontSize: 11, fill: '#374151' }}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </section>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <section className="bg-white border border-gray-200/60 rounded-2xl shadow-sm p-5 space-y-4">
