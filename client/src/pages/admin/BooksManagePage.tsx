@@ -4,11 +4,16 @@ import { bookApi } from '../../api/bookApi';
 import { categoryApi } from '../../api/categoryApi';
 import { uploadApi } from '../../api/uploadApi';
 import { Plus, Edit, Trash2, Search, X, Upload, AlertCircle, Award, FileText, Download } from 'lucide-react';
+import Modal from '../../components/ui/Modal';
+import { useToast } from '../../contexts/ToastContext';
 import type { IBook, IBookCreatePayload, ICategory } from '../../types';
 import { getApiErrorMessage } from '../../utils/errors';
 import { resolveAssetUrl } from '../../utils/assetUrl';
 
 export default function BooksManagePage() {
+  const { showToast } = useToast();
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [books, setBooks] = useState<IBook[]>([]);
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,14 +138,18 @@ export default function BooksManagePage() {
     setUploadedImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleDeleteBook = async (id: string) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa sách này khỏi showroom?')) return;
+  const confirmDeleteBook = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await bookApi.deleteBook(id);
+      await bookApi.deleteBook(deleteTarget.id);
       fetchBooks();
+      setDeleteTarget(null);
     } catch (err: unknown) {
       console.error('Delete failed:', err);
-      alert(getApiErrorMessage(err, 'Không thể xóa sách.'));
+      showToast(getApiErrorMessage(err, 'Không thể xóa sách.'), 'error');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -366,7 +375,7 @@ export default function BooksManagePage() {
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDeleteBook(book._id)}
+                          onClick={() => setDeleteTarget({ id: book._id, title: book.title })}
                           className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors inline-flex items-center"
                           title="Xóa"
                         >
@@ -645,6 +654,29 @@ export default function BooksManagePage() {
             </form>
           </div>
         </div>
+      )}
+
+      {deleteTarget && (
+        <Modal open onClose={() => !deleting && setDeleteTarget(null)} title="Xóa sách">
+          <div className="space-y-4">
+            <p className="text-sm text-text-secondary">
+              Xóa <strong className="text-text">{deleteTarget.title}</strong> khỏi showroom? Hành động này không thể hoàn tác.
+            </p>
+            <div className="flex justify-end gap-3 pt-2">
+              <button type="button" onClick={() => setDeleteTarget(null)} disabled={deleting} className="btn-ghost">
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmDeleteBook()}
+                disabled={deleting}
+                className="px-5 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
+              >
+                {deleting ? 'Đang xóa...' : 'Xóa sách'}
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );

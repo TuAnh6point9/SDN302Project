@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { MessageSquare, RefreshCw, Search, Star, Trash2 } from 'lucide-react';
 import { reviewApi } from '../../api/reviewApi';
+import Modal from '../../components/ui/Modal';
 import type { IReview } from '../../types';
 import { getApiErrorMessage } from '../../utils/errors';
 
@@ -12,6 +13,7 @@ export default function ReviewsManagePage() {
   const [search, setSearch] = useState('');
   const [rating, setRating] = useState<'all' | '1' | '2' | '3' | '4' | '5'>('all');
   const [deletingId, setDeletingId] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<IReview | null>(null);
 
   const fetchReviews = () => {
     setLoading(true);
@@ -40,14 +42,16 @@ export default function ReviewsManagePage() {
     });
   }, [rating, reviews, search]);
 
-  const handleDelete = async (review: IReview) => {
-    if (!window.confirm('Bạn có chắc muốn xóa đánh giá này?')) return;
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const review = deleteTarget;
 
     setDeletingId(review._id);
     setError('');
     try {
       await reviewApi.deleteReview(review._id);
       setReviews((current) => current.filter((item) => item._id !== review._id));
+      setDeleteTarget(null);
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, 'Không thể xóa đánh giá.'));
     } finally {
@@ -123,7 +127,7 @@ export default function ReviewsManagePage() {
                   <button
                     type="button"
                     disabled={deletingId === review._id}
-                    onClick={() => void handleDelete(review)}
+                    onClick={() => setDeleteTarget(review)}
                     className="btn-outline !py-2 text-xs text-red-600 border-red-100 hover:bg-red-50 self-start"
                   >
                     <Trash2 className="w-4 h-4" /> Xóa
@@ -134,6 +138,29 @@ export default function ReviewsManagePage() {
           </div>
         )}
       </div>
+
+      {deleteTarget && (
+        <Modal open onClose={() => !deletingId && setDeleteTarget(null)} title="Xóa đánh giá">
+          <div className="space-y-4">
+            <p className="text-sm text-text-secondary">
+              Xóa đánh giá của <strong className="text-text">{deleteTarget.user.name}</strong>? Hành động này không thể hoàn tác.
+            </p>
+            <div className="flex justify-end gap-3 pt-2">
+              <button type="button" onClick={() => setDeleteTarget(null)} disabled={!!deletingId} className="btn-ghost">
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmDelete()}
+                disabled={!!deletingId}
+                className="px-5 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
+              >
+                {deletingId ? 'Đang xóa...' : 'Xóa đánh giá'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
