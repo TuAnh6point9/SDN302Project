@@ -4,6 +4,7 @@ import {
   Bell,
   ChevronDown,
   ClipboardList,
+  Gift,
   Heart,
   Leaf,
   LogOut,
@@ -199,6 +200,9 @@ export default function Header() {
                 <Link to="/orders" className="btn-ghost !p-2.5" title="Đơn hàng">
                   <ClipboardList className="w-5 h-5" />
                 </Link>
+                <Link to="/rewards" className="btn-ghost !p-2.5" title="Điểm thưởng">
+                  <Gift className="w-5 h-5" />
+                </Link>
                 <Link to="/wishlist" className="btn-ghost !p-2.5" title="Sách yêu thích">
                   <Heart className="w-5 h-5" />
                 </Link>
@@ -238,6 +242,16 @@ export default function Header() {
                         <User className="w-4 h-4" />
                         Hồ sơ cá nhân
                       </Link>
+                      {!isAdmin && (
+                        <Link
+                          to="/rewards"
+                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-primary-light/5 transition-colors"
+                          onClick={() => setIsAccountDropdownOpen(false)}
+                        >
+                          <Gift className="w-4 h-4" />
+                          Điểm thưởng
+                        </Link>
+                      )}
                       <Link
                         to="/notifications"
                         className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-primary-light/5 transition-colors"
