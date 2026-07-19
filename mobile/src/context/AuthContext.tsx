@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { authApi } from '../api';
 import { setAuthToken } from '../api/client';
 import { IUser } from '../types/models';
@@ -41,30 +41,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-  const setUser = (u: IUser) => {
+  // useCallback để identity ổn định — screen dùng các hàm này trong deps của
+  // useFocusEffect; identity đổi mỗi render sẽ gây vòng lặp re-render vô hạn.
+  const setUser = useCallback((u: IUser) => {
     setUserState(u);
     AsyncStorage.setItem(USER_KEY, JSON.stringify(u)).catch(() => {});
-  };
+  }, []);
 
-  const login = async (u: IUser, token: string) => {
+  const login = useCallback(async (u: IUser, token: string) => {
     setAuthToken(token);
     setUserState(u);
     await AsyncStorage.multiSet([[TOKEN_KEY, token], [USER_KEY, JSON.stringify(u)]]);
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     setAuthToken(null);
     setUserState(null);
     await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
-  };
+  }, []);
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     const me = await authApi.getMe();
     setUser(me);
-  };
+  }, [setUser]);
+
+  const value = useMemo(
+    () => ({ user, isLoading, login, logout, setUser, refreshUser }),
+    [user, isLoading, login, logout, setUser, refreshUser]
+  );
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, setUser, refreshUser }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

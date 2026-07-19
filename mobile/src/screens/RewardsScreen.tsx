@@ -1,9 +1,8 @@
 import { useFocusEffect } from '@react-navigation/native';
-import { Leaf, Plus, Minus, Info } from 'lucide-react-native';
+import { Leaf, Info } from 'lucide-react-native';
 import React, { useCallback, useState, useRef } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -19,15 +18,16 @@ import { typography } from '../theme/typography';
 import { IRewardHistoryItem } from '../types/models';
 import { formatDate, formatPrice } from '../utils/format';
 
-const REDEEM_STEP = 100;
+const REDEEM_POINTS = 1000;
 
 export default function RewardsScreen() {
   const { user, refreshUser } = useAuth();
   const [history, setHistory] = useState<IRewardHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState(false);
-  const [pointsToRedeem, setPointsToRedeem] = useState(100);
-  
+  const [redeemError, setRedeemError] = useState('');
+  const [redeemSuccess, setRedeemSuccess] = useState('');
+
   const flatListRef = useRef<FlatList>(null);
 
   const fetchHistory = useCallback(async () => {
@@ -40,22 +40,27 @@ export default function RewardsScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      // Tab navigator không unmount màn hình — xóa thông báo cũ mỗi lần quay lại
+      setRedeemError('');
+      setRedeemSuccess('');
       Promise.all([fetchHistory(), refreshUser()]).finally(() => setLoading(false));
     }, [fetchHistory, refreshUser])
   );
 
   const handleRedeem = async () => {
-    if (user?.points && user.points < pointsToRedeem) {
-      return Alert.alert('Lỗi', 'Bạn không đủ điểm để đổi voucher');
+    setRedeemError('');
+    setRedeemSuccess('');
+    if ((user?.points ?? 0) < REDEEM_POINTS) {
+      setRedeemError('Bạn chưa đủ điểm để đổi voucher này');
+      return;
     }
     setRedeeming(true);
     try {
-      const res = await rewardApi.redeem(pointsToRedeem);
-      Alert.alert('Thành công', `Đổi thành công voucher ${res.voucher.code}`);
-      setPointsToRedeem(100);
+      const res = await rewardApi.redeem(REDEEM_POINTS);
+      setRedeemSuccess(`Đổi thành công voucher ${res.voucher.code} — lưu lại mã này ngay, mã chỉ hiển thị 1 lần!`);
       await Promise.all([fetchHistory(), refreshUser()]);
     } catch (err) {
-      Alert.alert('Lỗi', getApiErrorMessage(err, 'Không đổi được điểm'));
+      setRedeemError(getApiErrorMessage(err, 'Không đổi được điểm'));
     } finally {
       setRedeeming(false);
     }
@@ -86,34 +91,18 @@ export default function RewardsScreen() {
       </View>
 
       <Text style={styles.sectionTitle}>Đổi điểm lấy voucher</Text>
-      <Text style={styles.sectionSubtitle}>100 điểm = voucher 10.000đ</Text>
+      <Text style={styles.sectionSubtitle}>{REDEEM_POINTS} điểm = voucher {formatPrice(REDEEM_POINTS * 10)}</Text>
 
       <View style={styles.redeemCard}>
-        <View style={styles.stepperRow}>
-          <TouchableOpacity
-            style={styles.stepBtn}
-            onPress={() => setPointsToRedeem((p) => Math.max(100, p - REDEEM_STEP))}
-          >
-            <Minus size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-          
-          <View style={styles.stepperValueCol}>
-            <Text style={styles.redeemValText}>{pointsToRedeem}</Text>
-            <Text style={styles.redeemCashText}>(- {formatPrice(pointsToRedeem * 100)})</Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.stepBtn}
-            onPress={() => setPointsToRedeem((p) => Math.min((user?.points ?? 9999), p + REDEEM_STEP))}
-          >
-            <Plus size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
+        <View style={styles.stepperValueCol}>
+          <Text style={styles.redeemValText}>{REDEEM_POINTS}</Text>
+          <Text style={styles.redeemCashText}>(- {formatPrice(REDEEM_POINTS * 10)})</Text>
         </View>
 
-        <TouchableOpacity 
-          style={styles.redeemBtn} 
+        <TouchableOpacity
+          style={styles.redeemBtn}
           onPress={handleRedeem}
-          disabled={redeeming || (user?.points ?? 0) < pointsToRedeem}
+          disabled={redeeming}
         >
           {redeeming ? (
             <ActivityIndicator color={colors.surface} />
@@ -121,6 +110,8 @@ export default function RewardsScreen() {
             <Text style={styles.redeemBtnText}>Đổi điểm</Text>
           )}
         </TouchableOpacity>
+        {redeemError ? <Text style={styles.redeemError}>{redeemError}</Text> : null}
+        {redeemSuccess ? <Text style={styles.redeemSuccess}>{redeemSuccess}</Text> : null}
       </View>
 
       <Text style={[styles.sectionTitle, { marginTop: spacing.lg }]}>Lịch sử điểm</Text>
@@ -272,21 +263,6 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 2,
   },
-  stepperRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.background,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  stepBtn: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   stepperValueCol: {
     alignItems: 'center',
   },
@@ -313,6 +289,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.surface,
     fontWeight: '700',
+  },
+  redeemError: {
+    ...typography.caption,
+    fontSize: 13,
+    color: colors.error,
+    textAlign: 'center',
+  },
+  redeemSuccess: {
+    ...typography.caption,
+    fontSize: 13,
+    color: colors.primary,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   emptyWrap: {
     paddingVertical: spacing.xl,

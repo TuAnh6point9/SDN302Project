@@ -10,7 +10,7 @@ import { createNotification } from "./notificationService";
 export const DAILY_REWARD_POINTS = 10;
 export const REVIEW_REWARD_POINTS = 5;
 export const VND_PER_POINT = 10000; // 1 điểm mỗi 10.000đ giá trị đơn hàng
-export const POINTS_TO_VND_RATE = 100; // 1 điểm quy đổi = 100đ giá trị voucher
+export const POINTS_TO_VND_RATE = 10; // 1 điểm quy đổi = 10đ giá trị voucher (1000 điểm = 10.000đ)
 export const REDEEM_MIN_POINTS = 100;
 export const REDEEM_STEP = 100;
 

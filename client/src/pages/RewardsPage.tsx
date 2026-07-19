@@ -8,7 +8,7 @@ import { getApiErrorMessage } from '../utils/errors';
 
 const REDEEM_MIN_POINTS = 100;
 const REDEEM_STEP = 100;
-const POINTS_TO_VND_RATE = 100;
+const POINTS_TO_VND_RATE = 10;
 
 const formatDate = (value: string) =>
   new Intl.DateTimeFormat('vi-VN', {
