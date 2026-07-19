@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ClipboardList, Download, Filter, RefreshCw, Search } from 'lucide-react';
 import { orderApi, type IAdminOrdersQuery } from '../../api/orderApi';
+import Modal from '../../components/ui/Modal';
+import { useToast } from '../../contexts/ToastContext';
 import type { IOrder, OrderStatus, PaymentMethod, PaymentStatus } from '../../types';
 import { getApiErrorMessage } from '../../utils/errors';
 
@@ -36,7 +38,14 @@ const isOverdueOnline = (order: IOrder) =>
   && order.orderStatus === 'pending'
   && Date.now() - new Date(order.createdAt).getTime() > OVERDUE_MS;
 
+type PendingAction =
+  | { kind: 'status'; order: IOrder; nextStatus: OrderStatus }
+  | { kind: 'quickCancel'; order: IOrder };
+
+const QUICK_CANCEL_REASON = 'Quá hạn thanh toán VietQR (quá 24 giờ), hệ thống hoàn tồn kho';
+
 export default function OrdersManagePage() {
+  const { showToast } = useToast();
   const [orders, setOrders] = useState<IOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState('');
@@ -46,6 +55,9 @@ export default function OrdersManagePage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | 'all'>('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [reasonInput, setReasonInput] = useState('');
+  const [submittingAction, setSubmittingAction] = useState(false);
 
   const filters = useMemo<IAdminOrdersQuery>(() => ({
     search: search.trim() || undefined,
@@ -68,52 +80,54 @@ export default function OrdersManagePage() {
     fetchOrders();
   }, [fetchOrders]);
 
-  const handleStatusChange = async (order: IOrder, nextStatus: OrderStatus) => {
-    const cancelReason = nextStatus === 'cancelled'
-      ? window.prompt('Nhập lý do hủy đơn hàng:')
-      : undefined;
+  // Mở modal thu thập lý do/ghi chú thay vì window.prompt — submit thật nằm ở confirmPendingAction.
+  const handleStatusChange = (order: IOrder, nextStatus: OrderStatus) => {
+    setReasonInput('');
+    setPendingAction({ kind: 'status', order, nextStatus });
+  };
 
-    if (nextStatus === 'cancelled' && !cancelReason?.trim()) {
+  const handleQuickCancel = (order: IOrder) => {
+    setReasonInput('');
+    setPendingAction({ kind: 'quickCancel', order });
+  };
+
+  const closePendingAction = () => {
+    if (submittingAction) return;
+    setPendingAction(null);
+    setReasonInput('');
+  };
+
+  const confirmPendingAction = async () => {
+    if (!pendingAction) return;
+    const { order } = pendingAction;
+    const isCancelStatus = pendingAction.kind === 'quickCancel' || pendingAction.nextStatus === 'cancelled';
+
+    if (pendingAction.kind === 'status' && isCancelStatus && !reasonInput.trim()) {
       return;
     }
 
-    const note = nextStatus !== 'cancelled'
-      ? window.prompt('Ghi chú cập nhật trạng thái (có thể bỏ trống):') || undefined
-      : undefined;
-
+    setSubmittingAction(true);
     setUpdatingId(order._id);
     try {
-      const nextPaymentStatus = nextStatus === 'delivered' ? 'paid' : order.paymentStatus;
-      const updated = await orderApi.updateStatus(order._id, {
-        orderStatus: nextStatus,
-        paymentStatus: nextPaymentStatus,
-        note,
-        cancelReason: cancelReason?.trim(),
-      });
+      const updated = pendingAction.kind === 'quickCancel'
+        ? await orderApi.updateStatus(order._id, {
+            orderStatus: 'cancelled',
+            cancelReason: QUICK_CANCEL_REASON,
+          })
+        : await orderApi.updateStatus(order._id, {
+            orderStatus: pendingAction.nextStatus,
+            paymentStatus: pendingAction.nextStatus === 'delivered' ? 'paid' : order.paymentStatus,
+            note: isCancelStatus ? undefined : reasonInput.trim() || undefined,
+            cancelReason: isCancelStatus ? reasonInput.trim() : undefined,
+          });
       setOrders((current) => current.map((item) => item._id === updated._id ? updated : item));
+      setPendingAction(null);
+      setReasonInput('');
     } catch (err: unknown) {
-      alert(getApiErrorMessage(err, 'Không thể cập nhật đơn hàng.'));
+      const fallback = pendingAction.kind === 'quickCancel' ? 'Không thể hủy đơn hàng.' : 'Không thể cập nhật đơn hàng.';
+      showToast(getApiErrorMessage(err, fallback), 'error');
     } finally {
-      setUpdatingId('');
-    }
-  };
-
-  const handleQuickCancel = async (order: IOrder) => {
-    const confirmed = window.confirm(
-      `Hủy đơn ${order.orderCode} quá hạn thanh toán và hoàn tồn kho?`
-    );
-    if (!confirmed) return;
-
-    setUpdatingId(order._id);
-    try {
-      const updated = await orderApi.updateStatus(order._id, {
-        orderStatus: 'cancelled',
-        cancelReason: 'Quá hạn thanh toán VietQR (quá 24 giờ), hệ thống hoàn tồn kho',
-      });
-      setOrders((current) => current.map((item) => item._id === updated._id ? updated : item));
-    } catch (err: unknown) {
-      alert(getApiErrorMessage(err, 'Không thể hủy đơn hàng.'));
-    } finally {
+      setSubmittingAction(false);
       setUpdatingId('');
     }
   };
@@ -277,7 +291,7 @@ export default function OrdersManagePage() {
                         <select
                           value={order.orderStatus}
                           disabled={updatingId === order._id || order.orderStatus === 'cancelled'}
-                          onChange={(event) => void handleStatusChange(order, event.target.value as OrderStatus)}
+                          onChange={(event) => handleStatusChange(order, event.target.value as OrderStatus)}
                           className="input-field !py-2 text-sm min-w-40"
                         >
                           {Object.entries(statusLabels).map(([value, label]) => (
@@ -288,7 +302,7 @@ export default function OrdersManagePage() {
                           <button
                             type="button"
                             disabled={updatingId === order._id}
-                            onClick={() => void handleQuickCancel(order)}
+                            onClick={() => handleQuickCancel(order)}
                             className="mt-2 w-full px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 disabled:opacity-50 transition-colors"
                           >
                             Hủy &amp; hoàn kho
@@ -303,6 +317,65 @@ export default function OrdersManagePage() {
           </div>
         )}
       </div>
+
+      {pendingAction && (
+        <Modal
+          open
+          onClose={closePendingAction}
+          title={
+            pendingAction.kind === 'quickCancel'
+              ? 'Hủy đơn quá hạn thanh toán'
+              : pendingAction.nextStatus === 'cancelled'
+              ? 'Hủy đơn hàng'
+              : 'Cập nhật trạng thái đơn hàng'
+          }
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-text-secondary">
+              Đơn <strong className="text-text">{pendingAction.order.orderCode}</strong>
+              {pendingAction.kind === 'status' && (
+                <> sẽ chuyển sang trạng thái <strong className="text-text">{statusLabels[pendingAction.nextStatus]}</strong>.</>
+              )}
+            </p>
+
+            {pendingAction.kind === 'quickCancel' ? (
+              <p className="text-sm bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3">
+                {QUICK_CANCEL_REASON}
+              </p>
+            ) : (
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">
+                  {pendingAction.nextStatus === 'cancelled' ? 'Lý do hủy đơn (bắt buộc)' : 'Ghi chú cập nhật (tùy chọn)'}
+                </label>
+                <textarea
+                  value={reasonInput}
+                  onChange={(event) => setReasonInput(event.target.value)}
+                  rows={3}
+                  className="input-field mt-1 resize-none"
+                  placeholder={pendingAction.nextStatus === 'cancelled' ? 'Nhập lý do hủy đơn hàng' : 'Ghi chú (có thể bỏ trống)'}
+                />
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button type="button" onClick={closePendingAction} disabled={submittingAction} className="btn-outline !py-2 text-sm">
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmPendingAction()}
+                disabled={
+                  submittingAction
+                  || (pendingAction.kind === 'status' && pendingAction.nextStatus === 'cancelled' && !reasonInput.trim())
+                }
+                className="btn-primary !py-2 text-sm disabled:opacity-50"
+              >
+                {submittingAction ? 'Đang xử lý...' : 'Xác nhận'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
