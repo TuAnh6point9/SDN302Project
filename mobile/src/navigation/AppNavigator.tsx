@@ -6,6 +6,8 @@ import DailyRewardModal from '../components/DailyRewardModal';
 import { useAuth } from '../context/AuthContext';
 import BookDetailScreen from '../screens/BookDetailScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import LoginScreen from '../screens/LoginScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import OrderDetailScreen from '../screens/OrderDetailScreen';
@@ -47,6 +49,7 @@ export default function AppNavigator() {
             <RootStack.Screen name="OrderDetail" component={OrderDetailScreen} options={{ title: 'Chi tiết đơn hàng' }} />
             <RootStack.Screen name="Wishlist" component={WishlistScreen} options={{ title: 'Yêu thích' }} />
             <RootStack.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Thông báo' }} />
+            <RootStack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: 'Chỉnh sửa hồ sơ' }} />
           </RootStack.Navigator>
           <DailyRewardModal />
         </>
@@ -55,6 +58,7 @@ export default function AppNavigator() {
           <AuthStack.Screen name="Login" component={LoginScreen} />
           <AuthStack.Screen name="Register" component={RegisterScreen} />
           <AuthStack.Screen name="Otp" component={OtpScreen} />
+          <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         </AuthStack.Navigator>
       )}
     </NavigationContainer>

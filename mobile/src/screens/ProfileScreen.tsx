@@ -1,28 +1,53 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import {
+  User, Heart, Bell, Lock, ChevronRight, LogOut, Package,
+  Leaf, Settings, ChevronDown, ChevronUp, HelpCircle, Info
+} from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput,
-  TouchableOpacity, View,
+  ActivityIndicator, Alert, ScrollView, StyleSheet,
+  Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { authApi } from '../api';
 import { getApiErrorMessage } from '../api/client';
+import GreenButton from '../components/GreenButton';
 import { useAuth } from '../context/AuthContext';
 import { RootStackParamList } from '../navigation/types';
-import { colors, radius } from '../theme/colors';
+import { colors, radius, spacing } from '../theme/colors';
+import { typography } from '../theme/typography';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ProfileScreen() {
   const navigation = useNavigation<Nav>();
   const { user, logout } = useAuth();
+  
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [changing, setChanging] = useState(false);
+
+  // Custom Navigation Header Setup
+  React.useEffect(() => {
+    navigation.setOptions({
+      headerShown: true,
+      headerTitle: 'Tài khoản',
+      headerStyle: { backgroundColor: colors.surface },
+      headerShadowVisible: false,
+      headerTitleStyle: { ...typography.h3, fontSize: 18, fontWeight: '700' },
+      headerTintColor: colors.primary,
+      headerTitleAlign: 'center',
+      headerRight: () => (
+        <TouchableOpacity style={{ marginRight: spacing.sm }} onPress={() => Alert.alert('Cài đặt', 'Chức năng đang phát triển')}>
+          <Settings size={22} color={colors.primary} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
 
   const handleChangePassword = async () => {
     if (newPassword.length < 8) return setPasswordError('Mật khẩu mới tối thiểu 8 ký tự');
@@ -44,175 +69,256 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert('Đăng xuất', 'Bạn chắc chắn muốn đăng xuất?', [
+    Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
       { text: 'Hủy', style: 'cancel' },
       { text: 'Đăng xuất', style: 'destructive', onPress: () => logout() },
     ]);
   };
 
+  const MenuItem = ({ icon: Icon, title, onPress, rightIcon: RightIcon = ChevronRight }: any) => (
+    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
+      <Icon size={20} color={colors.textSecondary} />
+      <Text style={styles.menuText}>{title}</Text>
+      <RightIcon size={20} color={colors.textSecondary} />
+    </TouchableOpacity>
+  );
+
   return (
-    <ScrollView style={styles.safe} contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
-      <View style={styles.headerCard}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{user?.name?.charAt(0).toUpperCase() ?? '?'}</Text>
-        </View>
-        <Text style={styles.name}>{user?.name}</Text>
-        <Text style={styles.email}>{user?.email}</Text>
-        {user?.phone ? <Text style={styles.email}>{user.phone}</Text> : null}
-        <View style={styles.pointsPill}>
-          <Ionicons name="leaf" size={14} color={colors.primaryDark} />
-          <Text style={styles.pointsText}>{user?.points ?? 0} điểm thưởng</Text>
-        </View>
-      </View>
-
-      <View style={styles.menu}>
-        <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Wishlist')}>
-          <Ionicons name="heart-outline" size={20} color={colors.text} />
-          <Text style={styles.menuText}>Sách yêu thích</Text>
-          <Ionicons name="chevron-forward" size={18} color={colors.textPlaceholder} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Notifications')}>
-          <Ionicons name="notifications-outline" size={20} color={colors.text} />
-          <Text style={styles.menuText}>Thông báo</Text>
-          <Ionicons name="chevron-forward" size={18} color={colors.textPlaceholder} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => setShowPasswordForm((v) => !v)}
-        >
-          <Ionicons name="lock-closed-outline" size={20} color={colors.text} />
-          <Text style={styles.menuText}>Đổi mật khẩu</Text>
-          <Ionicons
-            name={showPasswordForm ? 'chevron-up' : 'chevron-forward'}
-            size={18}
-            color={colors.textPlaceholder}
-          />
-        </TouchableOpacity>
-
-        {showPasswordForm && (
-          <View style={styles.passwordForm}>
-            <TextInput
-              style={styles.input}
-              value={currentPassword}
-              onChangeText={setCurrentPassword}
-              placeholder="Mật khẩu hiện tại"
-              placeholderTextColor={colors.textPlaceholder}
-              secureTextEntry
-            />
-            <TextInput
-              style={styles.input}
-              value={newPassword}
-              onChangeText={setNewPassword}
-              placeholder="Mật khẩu mới (tối thiểu 8 ký tự)"
-              placeholderTextColor={colors.textPlaceholder}
-              secureTextEntry
-            />
-            <TextInput
-              style={styles.input}
-              value={confirm}
-              onChangeText={setConfirm}
-              placeholder="Nhập lại mật khẩu mới"
-              placeholderTextColor={colors.textPlaceholder}
-              secureTextEntry
-            />
-            {passwordError ? <Text style={styles.error}>{passwordError}</Text> : null}
-            <TouchableOpacity style={styles.saveBtn} onPress={handleChangePassword} disabled={changing}>
-              {changing
-                ? <ActivityIndicator color="#fff" size="small" />
-                : <Text style={styles.saveBtnText}>Lưu mật khẩu mới</Text>}
-            </TouchableOpacity>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        
+        {/* Header Profile Card */}
+        <View style={styles.profileCard}>
+          <View style={styles.avatarCircle}>
+            <Text style={styles.avatarLetter}>
+              {user?.name?.charAt(0).toUpperCase() ?? 'P'}
+            </Text>
           </View>
-        )}
-      </View>
+          <Text style={styles.profileName}>{user?.name || 'Phuc'}</Text>
+          <Text style={styles.profileEmail}>{user?.email || 'de180994letrongphuc@gmail.com'}</Text>
+          
+          <View style={styles.rewardBadge}>
+            <Leaf size={14} color={colors.primary} fill={colors.primary} />
+            <Text style={styles.rewardPointsText}>{user?.points ?? 0} điểm thưởng</Text>
+          </View>
+        </View>
 
-      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-        <Ionicons name="log-out-outline" size={18} color={colors.error} />
-        <Text style={styles.logoutText}>Đăng xuất</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        {/* Menu Group Card */}
+        <View style={styles.menuGroupCard}>
+          <MenuItem 
+            icon={User} 
+            title="Chỉnh sửa hồ sơ" 
+            onPress={() => navigation.navigate('EditProfile')} 
+          />
+          <View style={styles.menuDivider} />
+          <MenuItem 
+            icon={Heart} 
+            title="Sách yêu thích" 
+            onPress={() => navigation.navigate('Wishlist')} 
+          />
+          <View style={styles.menuDivider} />
+          <MenuItem 
+            icon={Bell} 
+            title="Thông báo" 
+            onPress={() => navigation.navigate('Notifications')} 
+          />
+          <View style={styles.menuDivider} />
+          <MenuItem 
+            icon={Lock} 
+            title="Đổi mật khẩu" 
+            onPress={() => setShowPasswordForm((v) => !v)} 
+            rightIcon={showPasswordForm ? ChevronUp : ChevronDown}
+          />
+
+          {showPasswordForm && (
+            <View style={styles.passwordForm}>
+              <View style={styles.formDivider} />
+              <TextInput
+                style={styles.input}
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+                placeholder="Mật khẩu hiện tại"
+                placeholderTextColor={colors.textSecondary}
+                secureTextEntry
+              />
+              <TextInput
+                style={styles.input}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                placeholder="Mật khẩu mới (tối thiểu 8 ký tự)"
+                placeholderTextColor={colors.textSecondary}
+                secureTextEntry
+              />
+              <TextInput
+                style={styles.input}
+                value={confirm}
+                onChangeText={setConfirm}
+                placeholder="Nhập lại mật khẩu mới"
+                placeholderTextColor={colors.textSecondary}
+                secureTextEntry
+              />
+              {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+              <GreenButton 
+                title="Cập nhật mật khẩu" 
+                onPress={handleChangePassword} 
+                loading={changing}
+                style={{ marginTop: spacing.sm }}
+              />
+            </View>
+          )}
+
+          <View style={styles.menuDivider} />
+          <MenuItem 
+            icon={HelpCircle} 
+            title="Trợ giúp & hỗ trợ" 
+            onPress={() => Alert.alert('Hỗ trợ', 'Vui lòng liên hệ support@greenleafbooks.vn')} 
+          />
+          <View style={styles.menuDivider} />
+          <MenuItem 
+            icon={Info} 
+            title="Giới thiệu ứng dụng" 
+            onPress={() => Alert.alert('Giới thiệu', 'GreenLeaf Books v1.0.0 - Premium Book Store Application')} 
+          />
+        </View>
+
+        {/* Logout Button */}
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+          <LogOut size={20} color={colors.error} />
+          <Text style={styles.logoutText}>Đăng xuất</Text>
+        </TouchableOpacity>
+
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  headerCard: {
+  scrollContent: { padding: spacing.md, paddingBottom: spacing.xl },
+  profileCard: {
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 20,
+    borderRadius: 16,
+    padding: spacing.xl,
     alignItems: 'center',
-    gap: 4,
+    marginBottom: spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.02,
+    shadowRadius: 8,
+    elevation: 1,
   },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+  avatarCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    marginBottom: spacing.sm,
   },
-  avatarText: { color: '#fff', fontSize: 26, fontWeight: '800' },
-  name: { fontSize: 18, fontWeight: '800', color: colors.text },
-  email: { fontSize: 13, color: colors.textSecondary },
-  pointsPill: {
+  avatarLetter: {
+    ...typography.largeTitle,
+    fontSize: 32,
+    color: colors.surface,
+    fontWeight: '700',
+  },
+  profileName: {
+    ...typography.h2,
+    fontSize: 18,
+    color: colors.text,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  profileEmail: {
+    ...typography.body,
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+  },
+  rewardBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#E8F1E9',
-    borderRadius: radius.pill,
-    paddingHorizontal: 12,
+    backgroundColor: '#EAEAEA',
+    paddingHorizontal: 16,
     paddingVertical: 6,
-    marginTop: 8,
+    borderRadius: radius.pill,
   },
-  pointsText: { fontSize: 13, fontWeight: '700', color: colors.primaryDark },
-  menu: {
+  rewardPointsText: {
+    ...typography.caption,
+    fontSize: 12,
+    color: colors.text,
+    fontWeight: '600',
+  },
+  menuGroupCard: {
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
-    marginTop: 16,
+    borderRadius: 16,
+    marginBottom: spacing.lg,
     overflow: 'hidden',
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    padding: spacing.md,
+    gap: spacing.md,
   },
-  menuText: { flex: 1, fontSize: 14, fontWeight: '600', color: colors.text },
-  passwordForm: { padding: 16, gap: 10 },
+  menuText: {
+    ...typography.body,
+    fontSize: 15,
+    color: colors.text,
+    flex: 1,
+    fontWeight: '500',
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginHorizontal: spacing.md,
+  },
+  formDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginBottom: spacing.md,
+  },
+  passwordForm: {
+    padding: spacing.md,
+    paddingTop: 0,
+    backgroundColor: colors.surface,
+  },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.md,
-    paddingHorizontal: 12,
-    height: 44,
-    fontSize: 14,
+    paddingHorizontal: spacing.md,
+    height: 48,
+    ...typography.body,
+    marginBottom: spacing.sm,
     color: colors.text,
   },
-  error: { color: colors.error, fontSize: 12 },
-  saveBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
+  errorText: {
+    ...typography.caption,
+    color: colors.error,
+    marginBottom: spacing.sm,
   },
-  saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
     borderColor: colors.error,
-    borderRadius: radius.md,
-    height: 46,
-    marginTop: 16,
+    borderRadius: 16,
+    height: 52,
+    marginBottom: spacing.md,
   },
-  logoutText: { color: colors.error, fontWeight: '700', fontSize: 14 },
+  logoutText: {
+    ...typography.h3,
+    fontSize: 16,
+    color: colors.error,
+    fontWeight: '700',
+  },
 });

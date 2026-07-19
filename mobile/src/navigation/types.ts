@@ -4,6 +4,7 @@ export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
   Otp: { email: string };
+  ForgotPassword: undefined;
 };
 
 export type RootStackParamList = {
@@ -13,6 +14,7 @@ export type RootStackParamList = {
   OrderDetail: { orderId: string };
   Wishlist: undefined;
   Notifications: undefined;
+  EditProfile: undefined;
 };
 
 export type MainTabsParamList = {

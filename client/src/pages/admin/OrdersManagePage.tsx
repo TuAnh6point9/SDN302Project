@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ClipboardList, Download, Filter, RefreshCw, Search } from 'lucide-react';
+import { AlertTriangle, ClipboardList, Download, Filter, RefreshCw, Search } from 'lucide-react';
 import { orderApi, type IAdminOrdersQuery } from '../../api/orderApi';
 import type { IOrder, OrderStatus, PaymentMethod, PaymentStatus } from '../../types';
 import { getApiErrorMessage } from '../../utils/errors';
@@ -26,6 +26,15 @@ const methodLabels: Record<PaymentMethod, string> = {
   COD: 'COD',
   ONLINE: 'VietQR',
 };
+
+// Đơn VietQR tạo quá 24h mà chưa thanh toán = quá hạn, đang giữ kho vô ích.
+const OVERDUE_MS = 24 * 60 * 60 * 1000;
+
+const isOverdueOnline = (order: IOrder) =>
+  order.paymentMethod === 'ONLINE'
+  && order.paymentStatus === 'pending'
+  && order.orderStatus === 'pending'
+  && Date.now() - new Date(order.createdAt).getTime() > OVERDUE_MS;
 
 export default function OrdersManagePage() {
   const [orders, setOrders] = useState<IOrder[]>([]);
@@ -88,6 +97,28 @@ export default function OrdersManagePage() {
       setUpdatingId('');
     }
   };
+
+  const handleQuickCancel = async (order: IOrder) => {
+    const confirmed = window.confirm(
+      `Hủy đơn ${order.orderCode} quá hạn thanh toán và hoàn tồn kho?`
+    );
+    if (!confirmed) return;
+
+    setUpdatingId(order._id);
+    try {
+      const updated = await orderApi.updateStatus(order._id, {
+        orderStatus: 'cancelled',
+        cancelReason: 'Quá hạn thanh toán VietQR (quá 24 giờ), hệ thống hoàn tồn kho',
+      });
+      setOrders((current) => current.map((item) => item._id === updated._id ? updated : item));
+    } catch (err: unknown) {
+      alert(getApiErrorMessage(err, 'Không thể hủy đơn hàng.'));
+    } finally {
+      setUpdatingId('');
+    }
+  };
+
+  const overdueCount = useMemo(() => orders.filter(isOverdueOnline).length, [orders]);
 
   const resetFilters = () => {
     setSearch('');
@@ -181,6 +212,15 @@ export default function OrdersManagePage() {
         </div>
       </section>
 
+      {overdueCount > 0 && (
+        <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl px-4 py-3 text-sm">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span>
+            Có <strong>{overdueCount}</strong> đơn VietQR quá hạn thanh toán (&gt;24h) đang giữ tồn kho — hủy để hoàn kho.
+          </span>
+        </div>
+      )}
+
       <div className="bg-white border border-gray-200/60 rounded-2xl shadow-sm overflow-hidden">
         {loading ? (
           <div className="p-12 text-center">
@@ -223,6 +263,11 @@ export default function OrdersManagePage() {
                       <td className="px-6 py-4">
                         <p>{paymentLabels[order.paymentStatus]}</p>
                         <p className="text-xs text-text-secondary mt-1">{methodLabels[order.paymentMethod]}</p>
+                        {isOverdueOnline(order) && (
+                          <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-semibold">
+                            <AlertTriangle className="w-3 h-3" /> Quá hạn thanh toán
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <span className="badge text-[11px]">{statusLabels[order.orderStatus]}</span>
@@ -239,6 +284,16 @@ export default function OrdersManagePage() {
                             <option key={value} value={value}>{label}</option>
                           ))}
                         </select>
+                        {isOverdueOnline(order) && (
+                          <button
+                            type="button"
+                            disabled={updatingId === order._id}
+                            onClick={() => void handleQuickCancel(order)}
+                            className="mt-2 w-full px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 disabled:opacity-50 transition-colors"
+                          >
+                            Hủy &amp; hoàn kho
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );

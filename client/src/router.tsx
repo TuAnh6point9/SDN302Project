@@ -25,6 +25,7 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const WishlistPage = lazy(() => import('./pages/WishlistPage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const RewardsPage = lazy(() => import('./pages/RewardsPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const BooksManagePage = lazy(() => import('./pages/admin/BooksManagePage'));
 const CategoriesManagePage = lazy(() => import('./pages/admin/CategoriesManagePage'));
@@ -58,6 +59,7 @@ export const router = createBrowserRouter([
       { path: 'wishlist', element: lazyPage(<AuthRequiredRoute><WishlistPage /></AuthRequiredRoute>) },
       { path: 'notifications', element: lazyPage(<AuthRequiredRoute><NotificationsPage /></AuthRequiredRoute>) },
       { path: 'rewards', element: lazyPage(<AuthRequiredRoute><RewardsPage /></AuthRequiredRoute>) },
+      { path: '*', element: lazyPage(<NotFoundPage />) },
     ],
   },
   {
@@ -103,9 +105,5 @@ export const router = createBrowserRouter([
       { path: 'rewards', element: lazyPage(<RewardDashboardPage />) },
       { path: 'users', element: lazyPage(<UsersManagePage />) },
     ],
-  },
-  {
-    path: '*',
-    element: <Navigate to="/" replace />,
   },
 ]);
