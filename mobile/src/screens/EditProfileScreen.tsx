@@ -7,6 +7,8 @@ import {
 } from 'react-native';
 import { authApi } from '../api';
 import { getApiErrorMessage } from '../api/client';
+import ProvincePicker from '../components/ProvincePicker';
+import { PROVINCES } from '../constants/provinces';
 import { useAuth } from '../context/AuthContext';
 import { RootStackParamList } from '../navigation/types';
 import { colors, radius } from '../theme/colors';
@@ -26,7 +28,9 @@ export default function EditProfileScreen() {
   const [recipientName, setRecipientName] = useState(defaultAddress?.recipientName ?? '');
   const [addressPhone, setAddressPhone] = useState(defaultAddress?.phone ?? '');
   const [addressLine, setAddressLine] = useState(defaultAddress?.addressLine ?? '');
-  const [city, setCity] = useState(defaultAddress?.city ?? '');
+  const [city, setCity] = useState(
+    defaultAddress?.city && PROVINCES.includes(defaultAddress.city) ? defaultAddress.city : ''
+  );
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -128,13 +132,7 @@ export default function EditProfileScreen() {
           placeholderTextColor={colors.textPlaceholder}
         />
         <Text style={styles.label}>Tỉnh/Thành phố</Text>
-        <TextInput
-          style={styles.input}
-          value={city}
-          onChangeText={setCity}
-          placeholder="TP. Hồ Chí Minh"
-          placeholderTextColor={colors.textPlaceholder}
-        />
+        <ProvincePicker value={city} onChange={setCity} />
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 

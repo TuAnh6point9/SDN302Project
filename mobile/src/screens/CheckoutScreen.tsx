@@ -8,6 +8,8 @@ import {
 } from 'react-native';
 import { orderApi, voucherApi } from '../api';
 import { getApiErrorMessage } from '../api/client';
+import ProvincePicker from '../components/ProvincePicker';
+import { PROVINCES } from '../constants/provinces';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { RootStackParamList } from '../navigation/types';
@@ -28,7 +30,9 @@ export default function CheckoutScreen() {
   const [recipientName, setRecipientName] = useState(defaultAddress?.recipientName ?? user?.name ?? '');
   const [phone, setPhone] = useState(defaultAddress?.phone ?? user?.phone ?? '');
   const [addressLine, setAddressLine] = useState(defaultAddress?.addressLine ?? '');
-  const [city, setCity] = useState(defaultAddress?.city ?? '');
+  const [city, setCity] = useState(
+    defaultAddress?.city && PROVINCES.includes(defaultAddress.city) ? defaultAddress.city : ''
+  );
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('COD');
   const [voucherCode, setVoucherCode] = useState('');
   const [appliedVoucher, setAppliedVoucher] = useState<{ code: string; discountTotal: number } | null>(null);
@@ -112,8 +116,7 @@ export default function CheckoutScreen() {
           <TextInput style={styles.input} value={addressLine} onChangeText={setAddressLine}
             placeholder="Số nhà, đường, phường/xã" placeholderTextColor={colors.textPlaceholder} />
           <Text style={styles.label}>Tỉnh/Thành phố</Text>
-          <TextInput style={styles.input} value={city} onChangeText={setCity}
-            placeholder="TP. Hồ Chí Minh" placeholderTextColor={colors.textPlaceholder} />
+          <ProvincePicker value={city} onChange={setCity} />
         </View>
 
         <Text style={styles.sectionTitle}>Thanh toán</Text>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { AlertCircle, CheckCircle2, Coins, KeyRound, MapPin, Save, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getApiErrorMessage } from '../utils/errors';
+import { PROVINCES } from '../constants/provinces';
 import type { IUserAddress } from '../types';
 
 export default function ProfilePage() {
@@ -14,7 +15,9 @@ export default function ProfilePage() {
   const [recipientName, setRecipientName] = useState(defaultAddress?.recipientName ?? user?.name ?? '');
   const [addressPhone, setAddressPhone] = useState(defaultAddress?.phone ?? user?.phone ?? '');
   const [addressLine, setAddressLine] = useState(defaultAddress?.addressLine ?? '');
-  const [city, setCity] = useState(defaultAddress?.city ?? '');
+  const [city, setCity] = useState(
+    defaultAddress?.city && PROVINCES.includes(defaultAddress.city) ? defaultAddress.city : ''
+  );
   const [profileError, setProfileError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
   const [submittingProfile, setSubmittingProfile] = useState(false);
@@ -192,13 +195,17 @@ export default function ProfilePage() {
 
           <div>
             <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">Tỉnh / thành phố</label>
-            <input
+            <select
               required
-              minLength={2}
               value={city}
               onChange={(event) => setCity(event.target.value)}
               className="input-field mt-1"
-            />
+            >
+              <option value="" disabled>Chọn tỉnh / thành phố</option>
+              {PROVINCES.map((province) => (
+                <option key={province} value={province}>{province}</option>
+              ))}
+            </select>
           </div>
 
           <div className="flex justify-end pt-4 border-t border-gray-100">

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, CreditCard, MapPin, Truck } from 'lucide-react';
 import { orderApi } from '../api/orderApi';
+import { PROVINCES } from '../constants/provinces';
 import { voucherApi } from '../api/voucherApi';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
@@ -22,7 +23,9 @@ export default function CheckoutPage() {
   const [recipientName, setRecipientName] = useState(defaultAddress?.recipientName ?? user?.name ?? '');
   const [phone, setPhone] = useState(defaultAddress?.phone ?? user?.phone ?? '');
   const [addressLine, setAddressLine] = useState(defaultAddress?.addressLine ?? '');
-  const [city, setCity] = useState(defaultAddress?.city ?? '');
+  const [city, setCity] = useState(
+    defaultAddress?.city && PROVINCES.includes(defaultAddress.city) ? defaultAddress.city : ''
+  );
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('COD');
   const [voucherCode, setVoucherCode] = useState('');
   const [appliedVoucherCode, setAppliedVoucherCode] = useState('');
@@ -122,7 +125,12 @@ export default function CheckoutPage() {
 
           <div>
             <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">Tỉnh / thành phố</label>
-            <input required minLength={2} value={city} onChange={(event) => setCity(event.target.value)} className="input-field mt-1" />
+            <select required value={city} onChange={(event) => setCity(event.target.value)} className="input-field mt-1">
+              <option value="" disabled>Chọn tỉnh / thành phố</option>
+              {PROVINCES.map((province) => (
+                <option key={province} value={province}>{province}</option>
+              ))}
+            </select>
           </div>
 
           <div className="border-t border-gray-100 pt-5 space-y-3">
