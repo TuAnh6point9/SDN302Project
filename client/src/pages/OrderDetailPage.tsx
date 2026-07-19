@@ -3,21 +3,14 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, ClipboardList, CreditCard, MapPin, Timer, XCircle } from 'lucide-react';
 import { orderApi } from '../api/orderApi';
 import { paymentApi } from '../api/paymentApi';
-import type { IOrder, OrderStatus } from '../types';
+import { ORDER_STATUS_LABELS as statusLabels } from '../constants/orderStatus';
+import type { IOrder } from '../types';
 import { getApiErrorMessage } from '../utils/errors';
 import Modal from '../components/ui/Modal';
 import { useToast } from '../contexts/ToastContext';
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-
-const statusLabels: Record<OrderStatus, string> = {
-  pending: 'Chờ xác nhận',
-  confirmed: 'Đã xác nhận',
-  shipping: 'Đang giao',
-  delivered: 'Đã giao',
-  cancelled: 'Đã hủy',
-};
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();

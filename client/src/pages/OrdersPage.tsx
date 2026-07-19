@@ -2,18 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ClipboardList, ChevronRight } from 'lucide-react';
 import { orderApi } from '../api/orderApi';
-import type { IOrder, OrderStatus } from '../types';
+import { ORDER_STATUS_LABELS as statusLabels } from '../constants/orderStatus';
+import type { IOrder } from '../types';
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-
-const statusLabels: Record<OrderStatus, string> = {
-  pending: 'Chờ xác nhận',
-  confirmed: 'Đã xác nhận',
-  shipping: 'Đang giao',
-  delivered: 'Đã giao',
-  cancelled: 'Đã hủy',
-};
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<IOrder[]>([]);

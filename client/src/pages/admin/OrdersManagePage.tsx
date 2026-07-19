@@ -3,20 +3,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ClipboardList, Download, Filter, RefreshCw, Search } from 'lucide-react';
 import { orderApi, type IAdminOrdersQuery } from '../../api/orderApi';
 import Modal from '../../components/ui/Modal';
+import { ORDER_STATUS_LABELS as statusLabels } from '../../constants/orderStatus';
 import { useToast } from '../../contexts/ToastContext';
 import type { IOrder, OrderStatus, PaymentMethod, PaymentStatus } from '../../types';
 import { getApiErrorMessage } from '../../utils/errors';
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-
-const statusLabels: Record<OrderStatus, string> = {
-  pending: 'Chờ xác nhận',
-  confirmed: 'Đã xác nhận',
-  shipping: 'Đang giao',
-  delivered: 'Đã giao',
-  cancelled: 'Đã hủy',
-};
 
 const paymentLabels: Record<PaymentStatus, string> = {
   pending: 'Chưa thanh toán',
