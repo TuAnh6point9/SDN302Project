@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Award, BookOpen, Leaf, PawPrint, TreePine } from 'lucide-react';
+import { ArrowRight, Award, BookOpen, Copy, Gift, Leaf, PawPrint, TreePine } from 'lucide-react';
 import { bookApi } from '../api/bookApi';
 import { categoryApi } from '../api/categoryApi';
 import BookCard from '../components/BookCard';
 import BookCardSkeleton from '../components/BookCardSkeleton';
+import { useToast } from '../contexts/ToastContext';
 import type { IBook, ICategory } from '../types';
+
+const PROMO_VOUCHER_CODE = 'GREENLEAF2NAM';
 
 const SLIDES = [
   {
@@ -43,10 +46,20 @@ const SLIDES = [
 ];
 
 export default function HomePage() {
+  const { showToast } = useToast();
   const [featuredBooks, setFeaturedBooks] = useState<IBook[]>([]);
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  const handleCopyVoucher = async () => {
+    try {
+      await navigator.clipboard.writeText(PROMO_VOUCHER_CODE);
+      showToast('Đã sao chép mã giảm giá.', 'success');
+    } catch {
+      showToast('Không thể sao chép, vui lòng nhập mã thủ công.', 'error');
+    }
+  };
 
   useEffect(() => {
     const slideTimer = setInterval(() => {
@@ -167,6 +180,30 @@ export default function HomePage() {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="page-container">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-emerald-700 text-white p-6 md:p-8 shadow-lg flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2 text-center md:text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/15 rounded-full text-xs font-bold uppercase tracking-wider border border-white/20">
+              <Gift className="w-3.5 h-3.5" /> Ưu đãi mừng GreenLeaf Books
+            </div>
+            <p className="text-white/85 text-sm max-w-md">
+              Giảm ngay 20% cho đơn từ 200.000đ (tối đa 100.000đ) khi nhập mã bên dưới lúc thanh toán.
+            </p>
+            <p className="text-white/60 text-xs">Áp dụng đến hết 31/12/2026</p>
+          </div>
+          <div className="flex items-center gap-2 bg-white/10 border border-white/25 rounded-2xl px-5 py-3 backdrop-blur-md shrink-0">
+            <span className="font-mono font-bold text-lg tracking-widest">{PROMO_VOUCHER_CODE}</span>
+            <button
+              onClick={() => void handleCopyVoucher()}
+              className="p-2 rounded-xl bg-white/15 hover:bg-white/25 transition-colors"
+              title="Sao chép mã"
+            >
+              <Copy className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </section>

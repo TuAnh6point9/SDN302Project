@@ -286,6 +286,17 @@ const vouchers = [
     usageLimit: 30,
     usedCount: 1,
     isActive: true
+  },
+  {
+    code: "GREENLEAF2NAM",
+    type: "percent" as const,
+    value: 20,
+    minOrderValue: 200000,
+    maxDiscount: 100000,
+    usageLimit: 500,
+    usedCount: 0,
+    isActive: true,
+    expiresAt: new Date("2026-12-31T23:59:59+07:00")
   }
 ];
 
