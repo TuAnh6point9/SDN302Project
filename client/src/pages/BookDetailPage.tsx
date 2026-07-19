@@ -303,19 +303,21 @@ export default function BookDetailPage() {
           </div>
 
           <div className="pt-4 border-t border-gray-100 flex flex-wrap gap-4">
-            <div className="flex items-center gap-3 w-full">
-              <label className="text-sm font-semibold text-text-secondary">Số lượng</label>
-              <input
-                type="number"
-                min={1}
-                max={Math.max(1, book.stockQuantity)}
-                value={quantity}
-                onChange={(event) => setQuantity(Math.max(1, Number(event.target.value)))}
-                className="input-field !w-24 !py-2 text-sm"
-                disabled={book.stockQuantity <= 0 || !user}
-              />
-              <span className="text-xs text-text-secondary">Còn {book.stockQuantity} cuốn</span>
-            </div>
+            {user && (
+              <div className="flex items-center gap-3 w-full">
+                <label className="text-sm font-semibold text-text-secondary">Số lượng</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={Math.max(1, book.stockQuantity)}
+                  value={quantity}
+                  onChange={(event) => setQuantity(Math.max(1, Number(event.target.value)))}
+                  className="input-field !w-24 !py-2 text-sm"
+                  disabled={book.stockQuantity <= 0}
+                />
+                <span className="text-xs text-text-secondary">Còn {book.stockQuantity} cuốn</span>
+              </div>
+            )}
             {cartMessage && <p className="text-sm text-primary font-semibold w-full">{cartMessage}</p>}
             {wishlistMessage && <p className="text-sm text-primary font-semibold w-full">{wishlistMessage}</p>}
             {cartError && (
