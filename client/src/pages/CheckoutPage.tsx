@@ -14,6 +14,12 @@ const SHIPPING_FEE = 30000;
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
+type AddressField = 'recipientName' | 'phone' | 'addressLine' | 'city';
+type FieldErrors = Partial<Record<AddressField, string>>;
+
+const fieldInputClass = (hasError: boolean) =>
+  `input-field mt-1 ${hasError ? 'border-red-500 focus:ring-red-100 focus:border-red-500' : ''}`;
+
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -33,9 +39,23 @@ export default function CheckoutPage() {
   const [error, setError] = useState('');
   const [voucherMessage, setVoucherMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const items = cart?.items ?? [];
   const total = subtotal - discountTotal + SHIPPING_FEE;
+
+  const clearFieldError = (field: AddressField) => {
+    setFieldErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
+  };
+
+  const validateAddress = (): FieldErrors => {
+    const next: FieldErrors = {};
+    if (recipientName.trim().length < 2) next.recipientName = 'Vui lòng nhập tên người nhận (tối thiểu 2 ký tự).';
+    if (phone.trim().length < 8) next.phone = 'Số điện thoại tối thiểu 8 chữ số.';
+    if (addressLine.trim().length < 5) next.addressLine = 'Vui lòng nhập địa chỉ chi tiết (tối thiểu 5 ký tự).';
+    if (!city) next.city = 'Vui lòng chọn tỉnh / thành phố.';
+    return next;
+  };
 
   const handleApplyVoucher = async () => {
     setError('');
@@ -62,6 +82,13 @@ export default function CheckoutPage() {
 
     if (items.length === 0) {
       setError('Giỏ hàng đang trống.');
+      return;
+    }
+
+    const nextFieldErrors = validateAddress();
+    setFieldErrors(nextFieldErrors);
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setError('Vui lòng kiểm tra lại thông tin nhận hàng.');
       return;
     }
 
@@ -110,27 +137,47 @@ export default function CheckoutPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">Người nhận</label>
-              <input required minLength={2} value={recipientName} onChange={(event) => setRecipientName(event.target.value)} className="input-field mt-1" />
+              <input
+                value={recipientName}
+                onChange={(event) => { setRecipientName(event.target.value); clearFieldError('recipientName'); }}
+                className={fieldInputClass(!!fieldErrors.recipientName)}
+              />
+              {fieldErrors.recipientName && <p className="text-red-600 text-xs mt-1">{fieldErrors.recipientName}</p>}
             </div>
             <div>
               <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">Số điện thoại</label>
-              <input required minLength={8} value={phone} onChange={(event) => setPhone(event.target.value)} className="input-field mt-1" />
+              <input
+                value={phone}
+                onChange={(event) => { setPhone(event.target.value); clearFieldError('phone'); }}
+                className={fieldInputClass(!!fieldErrors.phone)}
+              />
+              {fieldErrors.phone && <p className="text-red-600 text-xs mt-1">{fieldErrors.phone}</p>}
             </div>
           </div>
 
           <div>
             <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">Địa chỉ</label>
-            <input required minLength={5} value={addressLine} onChange={(event) => setAddressLine(event.target.value)} className="input-field mt-1" />
+            <input
+              value={addressLine}
+              onChange={(event) => { setAddressLine(event.target.value); clearFieldError('addressLine'); }}
+              className={fieldInputClass(!!fieldErrors.addressLine)}
+            />
+            {fieldErrors.addressLine && <p className="text-red-600 text-xs mt-1">{fieldErrors.addressLine}</p>}
           </div>
 
           <div>
             <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">Tỉnh / thành phố</label>
-            <select required value={city} onChange={(event) => setCity(event.target.value)} className="input-field mt-1">
+            <select
+              value={city}
+              onChange={(event) => { setCity(event.target.value); clearFieldError('city'); }}
+              className={fieldInputClass(!!fieldErrors.city)}
+            >
               <option value="" disabled>Chọn tỉnh / thành phố</option>
               {PROVINCES.map((province) => (
                 <option key={province} value={province}>{province}</option>
               ))}
             </select>
+            {fieldErrors.city && <p className="text-red-600 text-xs mt-1">{fieldErrors.city}</p>}
           </div>
 
           <div className="border-t border-gray-100 pt-5 space-y-3">
