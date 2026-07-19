@@ -6,6 +6,7 @@ import DailyRewardModal from '../components/DailyRewardModal';
 import { useAuth } from '../context/AuthContext';
 import BookDetailScreen from '../screens/BookDetailScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import LoginScreen from '../screens/LoginScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import OrderDetailScreen from '../screens/OrderDetailScreen';
@@ -55,6 +56,7 @@ export default function AppNavigator() {
           <AuthStack.Screen name="Login" component={LoginScreen} />
           <AuthStack.Screen name="Register" component={RegisterScreen} />
           <AuthStack.Screen name="Otp" component={OtpScreen} />
+          <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         </AuthStack.Navigator>
       )}
     </NavigationContainer>

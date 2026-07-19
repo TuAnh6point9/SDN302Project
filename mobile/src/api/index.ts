@@ -20,6 +20,8 @@ export const authApi = {
   changePassword: async (currentPassword: string, newPassword: string) => {
     await apiClient.put('/api/auth/password', { currentPassword, newPassword });
   },
+  forgotPassword: async (email: string) =>
+    (await apiClient.post('/api/auth/forgot-password', { email })).data as { message: string },
 };
 
 export interface IBooksQuery {
