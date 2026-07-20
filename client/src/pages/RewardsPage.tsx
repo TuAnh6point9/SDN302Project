@@ -178,11 +178,15 @@ export default function RewardsPage() {
           )}
         </div>
 
-        {myVouchers.length > 0 && (
-          <div className="bg-white border border-gray-200/60 rounded-2xl shadow-sm p-6 space-y-4">
-            <div className="flex items-center gap-2 font-heading font-bold text-text">
-              <TicketPercent className="w-5 h-5 text-primary" /> Voucher của tôi
-            </div>
+        <div className="bg-white border border-gray-200/60 rounded-2xl shadow-sm p-6 space-y-4">
+          <div className="flex items-center gap-2 font-heading font-bold text-text">
+            <TicketPercent className="w-5 h-5 text-primary" /> Voucher của tôi
+          </div>
+          {myVouchers.length === 0 ? (
+            <p className="text-sm text-text-secondary">
+              Bạn chưa có voucher nào. Đổi điểm ở trên để nhận voucher đầu tiên.
+            </p>
+          ) : (
             <div className="space-y-3">
               {myVouchers.map((voucher) => {
                 const status = getVoucherStatus(voucher);
@@ -205,8 +209,8 @@ export default function RewardsPage() {
                 );
               })}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="bg-white border border-gray-200/60 rounded-2xl shadow-sm overflow-hidden">
           {loading ? (
