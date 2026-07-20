@@ -2,7 +2,7 @@ import apiClient from './client';
 import type {
   IAuthResponse, IBook, ICart, ICategory, INotification, IOrder, IPagination,
   IReview, IRewardHistoryItem, IRewardStatus, IShippingAddress, IUser, IVoucher,
-  PaymentMethod, IAdminOverview,
+  PaymentMethod, IAdminOverview, IInventoryMovement, OrderStatus, PaymentStatus,
 } from '../types/models';
 
 export const authApi = {
@@ -78,6 +78,16 @@ export const orderApi = {
     (await apiClient.put(`/api/orders/${id}/cancel`, { cancelReason })).data.order,
   getAllOrders: async (): Promise<IOrder[]> =>
     (await apiClient.get('/api/orders/all')).data.orders,
+  updateStatus: async (
+    id: string,
+    payload: {
+      orderStatus: OrderStatus;
+      paymentStatus?: PaymentStatus;
+      note?: string;
+      cancelReason?: string;
+    }
+  ): Promise<IOrder> =>
+    (await apiClient.put(`/api/orders/${id}/status`, payload)).data.order,
 };
 
 export const paymentApi = {
@@ -95,6 +105,28 @@ export const voucherApi = {
     (await apiClient.get(`/api/vouchers/validate/${code}`, { params: { subtotal } })).data,
   getHomepageEvents: async (): Promise<IVoucher[]> =>
     (await apiClient.get('/api/vouchers/homepage-event')).data.vouchers,
+  getVouchers: async (): Promise<IVoucher[]> =>
+    (await apiClient.get('/api/vouchers')).data.vouchers,
+  createVoucher: async (payload: Omit<IVoucher, '_id' | 'usedCount' | 'createdAt' | 'updatedAt'>): Promise<IVoucher> =>
+    (await apiClient.post('/api/vouchers', payload)).data.voucher,
+  updateVoucher: async (code: string, payload: Partial<Omit<IVoucher, '_id' | 'usedCount' | 'createdAt' | 'updatedAt'>>): Promise<IVoucher> =>
+    (await apiClient.put(`/api/vouchers/${code}`, payload)).data.voucher,
+};
+
+export const inventoryApi = {
+  getMovements: async (): Promise<IInventoryMovement[]> =>
+    (await apiClient.get('/api/inventory')).data.movements,
+  adjust: async (
+    bookId: string,
+    payload: {
+      mode: 'set' | 'change';
+      type: 'import' | 'adjustment' | 'return';
+      quantity?: number;
+      quantityChange?: number;
+      note?: string;
+    }
+  ): Promise<{ book: IBook; movement: IInventoryMovement }> =>
+    (await apiClient.post(`/api/inventory/${bookId}/adjust`, payload)).data,
 };
 
 export const reviewApi = {

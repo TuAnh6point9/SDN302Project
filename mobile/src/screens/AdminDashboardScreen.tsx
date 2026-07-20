@@ -181,6 +181,36 @@ export default function AdminDashboardScreen() {
           </View>
         </View>
 
+        {/* Menu Quản Trị */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Chức năng quản trị</Text>
+          <View style={styles.menuGrid}>
+            <TouchableOpacity
+              style={styles.menuGridItem}
+              onPress={() => navigation.navigate('AdminOrders')}
+            >
+              <Ionicons name="receipt-outline" size={24} color={colors.primary} />
+              <Text style={styles.menuGridLabel}>Quản lý đơn</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuGridItem}
+              onPress={() => navigation.navigate('AdminInventory')}
+            >
+              <Ionicons name="cube-outline" size={24} color="#1E88E5" />
+              <Text style={styles.menuGridLabel}>Quản lý kho</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuGridItem}
+              onPress={() => navigation.navigate('AdminVouchers')}
+            >
+              <Ionicons name="pricetag-outline" size={24} color="#FFB300" />
+              <Text style={styles.menuGridLabel}>Quản lý voucher</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* 14 Days Revenue Custom Chart */}
         {overview && overview.revenueByDay && overview.revenueByDay.length > 0 && (
           <View style={styles.sectionCard}>
@@ -505,5 +535,27 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 6,
     overflow: 'hidden',
+  },
+  menuGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  menuGridItem: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    borderRadius: radius.md,
+    paddingVertical: 14,
+    marginHorizontal: 4,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    gap: 6,
+  },
+  menuGridLabel: {
+    ...typography.body,
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.text,
   },
 });

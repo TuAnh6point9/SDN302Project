@@ -16,6 +16,10 @@ export type RootStackParamList = {
   Notifications: undefined;
   EditProfile: undefined;
   AdminDashboard: undefined;
+  AdminOrders: undefined;
+  AdminOrderDetail: { orderId: string };
+  AdminInventory: undefined;
+  AdminVouchers: undefined;
 };
 
 export type MainTabsParamList = {

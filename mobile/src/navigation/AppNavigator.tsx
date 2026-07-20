@@ -15,6 +15,10 @@ import OtpScreen from '../screens/OtpScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import WishlistScreen from '../screens/WishlistScreen';
 import AdminDashboardScreen from '../screens/AdminDashboardScreen';
+import AdminOrdersScreen from '../screens/AdminOrdersScreen';
+import AdminOrderDetailScreen from '../screens/AdminOrderDetailScreen';
+import AdminInventoryScreen from '../screens/AdminInventoryScreen';
+import AdminVouchersScreen from '../screens/AdminVouchersScreen';
 import { colors } from '../theme/colors';
 import MainTabs from './MainTabs';
 import { AuthStackParamList, RootStackParamList } from './types';
@@ -58,6 +62,12 @@ export default function AppNavigator() {
             <RootStack.Screen name="Wishlist" component={WishlistScreen} options={{ title: 'Yêu thích' }} />
             <RootStack.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Thông báo' }} />
             <RootStack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: 'Chỉnh sửa hồ sơ' }} />
+            
+            {/* Admin Screens */}
+            <RootStack.Screen name="AdminOrders" component={AdminOrdersScreen} />
+            <RootStack.Screen name="AdminOrderDetail" component={AdminOrderDetailScreen} />
+            <RootStack.Screen name="AdminInventory" component={AdminInventoryScreen} />
+            <RootStack.Screen name="AdminVouchers" component={AdminVouchersScreen} />
           </RootStack.Navigator>
           <DailyRewardModal />
         </>

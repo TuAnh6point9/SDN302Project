@@ -186,3 +186,16 @@ export interface IAdminOverview {
     customers: number;
   };
 }
+
+export interface IInventoryMovement {
+  _id: string;
+  book: Pick<IBook, '_id' | 'title' | 'slug' | 'stockQuantity'> | string;
+  type: 'import' | 'adjustment' | 'sale' | 'return';
+  quantityChange: number;
+  quantityBefore: number;
+  quantityAfter: number;
+  note?: string;
+  createdBy?: Pick<IUser, '_id' | 'name' | 'email'>;
+  createdAt: string;
+  updatedAt: string;
+}
