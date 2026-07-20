@@ -77,14 +77,6 @@ export default function CartScreen() {
 
   const renderFooter = () => (
     <View style={styles.listFooter}>
-      <TouchableOpacity style={styles.voucherCard}>
-        <View style={styles.voucherLeft}>
-          <Ticket size={24} color={colors.primary} />
-          <Text style={styles.voucherText}>Áp dụng voucher</Text>
-        </View>
-        <Text style={styles.voucherSelect}>Chọn</Text>
-      </TouchableOpacity>
-
       <View style={styles.summaryCard}>
         <Text style={styles.summaryTitle}>Tóm tắt đơn hàng</Text>
         <View style={styles.summaryRow}>

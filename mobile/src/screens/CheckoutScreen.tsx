@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
-import { orderApi, voucherApi } from '../api';
+import { orderApi, voucherApi, rewardApi } from '../api';
 import { getApiErrorMessage } from '../api/client';
 import ProvincePicker from '../components/ProvincePicker';
 import { PROVINCES } from '../constants/provinces';
@@ -14,7 +14,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { RootStackParamList } from '../navigation/types';
 import { colors, radius } from '../theme/colors';
-import { PaymentMethod } from '../types/models';
+import { PaymentMethod, IVoucher } from '../types/models';
 import { formatPrice } from '../utils/format';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -40,6 +40,52 @@ export default function CheckoutScreen() {
   const [validating, setValidating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const [myVouchers, setMyVouchers] = useState<IVoucher[]>([]);
+  const [loadingVouchers, setLoadingVouchers] = useState(false);
+
+  useEffect(() => {
+    const fetchVouchers = async () => {
+      setLoadingVouchers(true);
+      try {
+        const history = await rewardApi.getHistory();
+        const vouchers = history
+          .filter(
+            (item) =>
+              (item.reason === 'redeem_voucher' || item.reason === 'claimed_voucher') &&
+              item.refId &&
+              typeof item.refId === 'object'
+          )
+          .map((item) => item.refId as IVoucher)
+          .filter((voucher) => {
+            const isUsed = (voucher.usedCount ?? 0) >= (voucher.usageLimit ?? 1);
+            const isExpired = voucher.expiresAt && new Date(voucher.expiresAt) < new Date();
+            return !isUsed && !isExpired && (voucher.isActive !== false);
+          });
+        setMyVouchers(vouchers);
+      } catch {
+        // Keep empty
+      } finally {
+        setLoadingVouchers(false);
+      }
+    };
+    fetchVouchers();
+  }, []);
+
+  const handleSelectVoucher = async (code: string) => {
+    setVoucherCode(code);
+    setValidating(true);
+    setVoucherError('');
+    try {
+      const res = await voucherApi.validate(code, subtotal);
+      setAppliedVoucher({ code, discountTotal: res.discountTotal });
+    } catch (err) {
+      setAppliedVoucher(null);
+      setVoucherError(getApiErrorMessage(err, 'Mã giảm giá không hợp lệ'));
+    } finally {
+      setValidating(false);
+    }
+  };
 
   const items = cart?.items ?? [];
   const subtotal = items.reduce(
@@ -167,6 +213,49 @@ export default function CheckoutScreen() {
             </Text>
           )}
           {voucherError ? <Text style={styles.voucherErr}>{voucherError}</Text> : null}
+
+          {/* User's available vouchers list */}
+          {loadingVouchers ? (
+            <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 10 }} />
+          ) : myVouchers.length > 0 ? (
+            <View style={styles.voucherListContainer}>
+              <Text style={styles.voucherListTitle}>Voucher sẵn có của bạn (chọn để áp dụng):</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.voucherScroll}>
+                {myVouchers.map((voucher) => {
+                  const isSelected = appliedVoucher?.code === voucher.code;
+                  return (
+                    <TouchableOpacity
+                      key={voucher._id}
+                      style={[
+                        styles.voucherItem,
+                        isSelected && styles.voucherItemSelected,
+                      ]}
+                      onPress={() => handleSelectVoucher(voucher.code)}
+                    >
+                      <View style={styles.voucherItemLeft}>
+                        <Text style={[styles.voucherItemCode, isSelected && styles.voucherItemCodeSelected]}>
+                          {voucher.code}
+                        </Text>
+                        <Text style={styles.voucherItemValue}>
+                          Giảm {formatPrice(voucher.value)}
+                        </Text>
+                        {voucher.minOrderValue > 0 && (
+                          <Text style={styles.voucherItemMin}>
+                            Đơn từ {formatPrice(voucher.minOrderValue)}
+                          </Text>
+                        )}
+                      </View>
+                      <View style={[styles.voucherSelectBadge, isSelected && styles.voucherSelectBadgeSelected]}>
+                        <Text style={[styles.voucherSelectBadgeText, isSelected && styles.voucherSelectBadgeTextSelected]}>
+                          {isSelected ? 'Dùng' : 'Chọn'}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          ) : null}
         </View>
 
         <Text style={styles.sectionTitle}>Tóm tắt đơn hàng</Text>
@@ -279,4 +368,75 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   submitText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  voucherListContainer: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: 10,
+  },
+  voucherListTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    marginBottom: 8,
+  },
+  voucherScroll: {
+    gap: 10,
+    paddingRight: 10,
+  },
+  voucherItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F5F5F5',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    padding: 10,
+    width: 190,
+    height: 76,
+  },
+  voucherItemSelected: {
+    borderColor: colors.primary,
+    backgroundColor: '#E8F5E9',
+  },
+  voucherItemLeft: {
+    flex: 1,
+    gap: 2,
+  },
+  voucherItemCode: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  voucherItemCodeSelected: {
+    color: colors.primary,
+  },
+  voucherItemValue: {
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
+  voucherItemMin: {
+    fontSize: 9,
+    color: colors.textPlaceholder,
+  },
+  voucherSelectBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+  },
+  voucherSelectBadgeSelected: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  voucherSelectBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  voucherSelectBadgeTextSelected: {
+    color: colors.primary,
+  },
 });
