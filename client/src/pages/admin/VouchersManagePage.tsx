@@ -141,45 +141,22 @@ export default function VouchersManagePage() {
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-7 gap-4">
-          <div>
-            <label className="text-xs text-text-secondary block mb-1">Mã voucher</label>
-            <input
-              required
-              value={form.code}
-              onChange={(event) => updateForm('code', event.target.value.toUpperCase())}
-              className="input-field !py-2 text-sm"
-              placeholder="GREEN10"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-text-secondary block mb-1">Loại giảm giá</label>
-            <select value={form.type} onChange={(event) => updateForm('type', event.target.value as VoucherType)} className="input-field !py-2 text-sm">
-              <option value="percent">Phần trăm</option>
-              <option value="fixed">Số tiền</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-text-secondary block mb-1">
-              {form.type === 'percent' ? 'Giá trị (%)' : 'Giá trị (đ)'}
-            </label>
-            <input type="number" min={0} required value={form.value} onChange={(event) => updateForm('value', Number(event.target.value))} className="input-field !py-2 text-sm" placeholder="Giá trị" />
-          </div>
-          <div>
-            <label className="text-xs text-text-secondary block mb-1">Đơn tối thiểu (đ)</label>
-            <input type="number" min={0} value={form.minOrderValue} onChange={(event) => updateForm('minOrderValue', Number(event.target.value))} className="input-field !py-2 text-sm" placeholder="0 = không yêu cầu" />
-          </div>
-          <div>
-            <label className="text-xs text-text-secondary block mb-1">Giảm tối đa (đ)</label>
-            <input type="number" min={0} value={form.maxDiscount} onChange={(event) => updateForm('maxDiscount', event.target.value)} className="input-field !py-2 text-sm" placeholder="Trống = không giới hạn" />
-          </div>
-          <div>
-            <label className="text-xs text-text-secondary block mb-1">Số lượt dùng</label>
-            <input type="number" min={1} value={form.usageLimit} onChange={(event) => updateForm('usageLimit', event.target.value)} className="input-field !py-2 text-sm" placeholder="Trống = không giới hạn" />
-          </div>
-          <div>
-            <label className="text-xs text-text-secondary block mb-1">Ngày hết hạn</label>
-            <input type="date" value={form.expiresAt} onChange={(event) => updateForm('expiresAt', event.target.value)} className="input-field !py-2 text-sm" />
-          </div>
+          <input
+            required
+            value={form.code}
+            onChange={(event) => updateForm('code', event.target.value.toUpperCase())}
+            className="input-field !py-2 text-sm"
+            placeholder="GREEN10"
+          />
+          <select value={form.type} onChange={(event) => updateForm('type', event.target.value as VoucherType)} className="input-field !py-2 text-sm">
+            <option value="percent">Phần trăm</option>
+            <option value="fixed">Số tiền</option>
+          </select>
+          <input type="number" min={0} required value={form.value} onChange={(event) => updateForm('value', Number(event.target.value))} className="input-field !py-2 text-sm" placeholder="Giá trị" />
+          <input type="number" min={0} value={form.minOrderValue} onChange={(event) => updateForm('minOrderValue', Number(event.target.value))} className="input-field !py-2 text-sm" placeholder="Đơn tối thiểu" />
+          <input type="number" min={0} value={form.maxDiscount} onChange={(event) => updateForm('maxDiscount', event.target.value)} className="input-field !py-2 text-sm" placeholder="Giảm tối đa" />
+          <input type="number" min={1} value={form.usageLimit} onChange={(event) => updateForm('usageLimit', event.target.value)} className="input-field !py-2 text-sm" placeholder="Số lượt" />
+          <input type="date" value={form.expiresAt} onChange={(event) => updateForm('expiresAt', event.target.value)} className="input-field !py-2 text-sm" />
         </div>
 
         <label className="inline-flex items-center gap-2 text-sm text-text-secondary">
