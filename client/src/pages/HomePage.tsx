@@ -49,6 +49,7 @@ export default function HomePage() {
   const { showToast } = useToast();
   const [featuredBooks, setFeaturedBooks] = useState<IBook[]>([]);
   const [categories, setCategories] = useState<ICategory[]>([]);
+  const [bestSellerIds, setBestSellerIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -82,6 +83,13 @@ export default function HomePage() {
     categoryApi.getCategories()
       .then(setCategories)
       .catch((err) => console.error('Error fetching categories:', err));
+
+    // Fetch best-seller badge list
+    bookApi.getBestSellerIds()
+      .then((ids) => setBestSellerIds(new Set(ids)))
+      .catch(() => {
+        // Badge chỉ là tiện ích hiển thị — lỗi thì bỏ qua
+      });
   }, []);
 
   return (
@@ -290,7 +298,7 @@ export default function HomePage() {
         ) : featuredBooks.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
             {featuredBooks.map((book) => (
-              <BookCard key={book._id} book={book} />
+              <BookCard key={book._id} book={book} isBestSeller={bestSellerIds.has(book._id)} />
             ))}
           </div>
         ) : (

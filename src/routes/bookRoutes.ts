@@ -7,6 +7,7 @@ import {
   updateBook
 } from "../controllers/bookController";
 import { exportBooksCsv, importBooksCsv } from "../controllers/bookCsvController";
+import { getBestSellerBookIds } from "../controllers/statsController";
 import { createReview, getBookReviews } from "../controllers/reviewController";
 import {
   getSubscriptionStatus,
@@ -29,6 +30,7 @@ import {
 const router = Router();
 
 router.get("/", validate(listBooksSchema), getBooks);
+router.get("/best-sellers", getBestSellerBookIds);
 router.get("/admin/export", protect, requireAdmin, exportBooksCsv);
 router.post("/admin/import", protect, requireAdmin, validate(importBooksCsvSchema), importBooksCsv);
 router.get("/:id", validate(bookParamsSchema), getBookById);

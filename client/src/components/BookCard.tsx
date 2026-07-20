@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, TrendingUp } from 'lucide-react';
 import type { IBook, ICategory } from '../types';
 import { resolveAssetUrl } from '../utils/assetUrl';
 
 interface BookCardProps {
   book: IBook;
+  isBestSeller?: boolean;
 }
 
-export default function BookCard({ book }: BookCardProps) {
+export default function BookCard({ book, isBestSeller }: BookCardProps) {
   const category = typeof book.category === 'object' ? (book.category as ICategory) : null;
   const coverImage = resolveAssetUrl(book.images[0]);
 
@@ -44,6 +45,12 @@ export default function BookCard({ book }: BookCardProps) {
         {category && (
           <div className="absolute bottom-3 left-3 badge text-[10px] bg-white/90 backdrop-blur-sm shadow-sm">
             {category.name}
+          </div>
+        )}
+
+        {isBestSeller && (
+          <div className="absolute top-3 right-3 inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg">
+            <TrendingUp className="w-3 h-3" /> Bán chạy
           </div>
         )}
       </div>

@@ -28,6 +28,7 @@ export default function CatalogPage() {
   
   const [books, setBooks] = useState<IBook[]>([]);
   const [categories, setCategories] = useState<ICategory[]>([]);
+  const [bestSellerIds, setBestSellerIds] = useState<Set<string>>(new Set());
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -47,6 +48,12 @@ export default function CatalogPage() {
     categoryApi.getCategories()
       .then(setCategories)
       .catch(err => console.error('Error fetching categories:', err));
+
+    bookApi.getBestSellerIds()
+      .then((ids) => setBestSellerIds(new Set(ids)))
+      .catch(() => {
+        // Badge chỉ là tiện ích hiển thị — lỗi thì bỏ qua
+      });
   }, []);
 
   useEffect(() => {
@@ -300,7 +307,7 @@ export default function CatalogPage() {
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-6">
                 {books.map(book => (
-                  <BookCard key={book._id} book={book} />
+                  <BookCard key={book._id} book={book} isBestSeller={bestSellerIds.has(book._id)} />
                 ))}
               </div>
               <Pagination

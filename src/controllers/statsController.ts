@@ -78,3 +78,16 @@ export const getAdminOverview = asyncHandler(async (_req: Request, res: Response
     }
   });
 });
+
+// Public — chỉ trả danh sách bookId bán chạy để gắn badge, không kèm doanh thu/thông tin khách.
+export const getBestSellerBookIds = asyncHandler(async (_req: Request, res: Response) => {
+  const topBooks = await Order.aggregate<{ _id: unknown; quantity: number }>([
+    { $match: { orderStatus: "delivered" } },
+    { $unwind: "$items" },
+    { $group: { _id: "$items.book", quantity: { $sum: "$items.quantity" } } },
+    { $sort: { quantity: -1 } },
+    { $limit: 5 }
+  ]);
+
+  res.json({ bookIds: topBooks.map((book) => String(book._id)) });
+});

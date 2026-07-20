@@ -12,6 +12,11 @@ export const bookApi = {
     return data.book;
   },
 
+  getBestSellerIds: async (): Promise<string[]> => {
+    const { data } = await apiClient.get('/api/books/best-sellers');
+    return data.bookIds;
+  },
+
   createBook: async (payload: IBookCreatePayload): Promise<IBook> => {
     const { data } = await apiClient.post('/api/books', payload);
     return data.book;
