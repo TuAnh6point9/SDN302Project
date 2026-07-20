@@ -4,11 +4,13 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import {
   ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
-  StyleSheet, Text, TextInput, TouchableOpacity, View,
+  StyleSheet, Text, TextInput, TouchableOpacity, View, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
 import { authApi } from '../api';
-import { getApiErrorMessage } from '../api/client';
+import { getApiErrorMessage, API_BASE_URL, setAuthToken } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import { AuthStackParamList } from '../navigation/types';
 import { colors, radius } from '../theme/colors';
 
@@ -16,6 +18,7 @@ type Nav = NativeStackNavigationProp<AuthStackParamList>;
 
 export default function RegisterScreen() {
   const navigation = useNavigation<Nav>();
+  const { login } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -23,6 +26,7 @@ export default function RegisterScreen() {
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleModalVisible, setGoogleModalVisible] = useState(false);
 
   const handleRegister = async () => {
     if (name.trim().length < 2) return setError('Tên tối thiểu 2 ký tự');
@@ -88,9 +92,60 @@ export default function RegisterScreen() {
             <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
               {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Đăng ký</Text>}
             </TouchableOpacity>
+
+            <View style={styles.orDivider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.orText}>Hoặc</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <TouchableOpacity style={styles.googleBtn} onPress={() => setGoogleModalVisible(true)}>
+              <Ionicons name="logo-google" size={20} color={colors.text} style={{ marginRight: 8 }} />
+              <Text style={styles.googleBtnText}>Tiếp tục với Google</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={googleModalVisible}
+        animationType="slide"
+        onRequestClose={() => setGoogleModalVisible(false)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setGoogleModalVisible(false)} style={styles.closeBtn}>
+              <Ionicons name="close" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={styles.modalHeaderTitle}>Đăng nhập Google</Text>
+            <View style={{ width: 24 }} />
+          </View>
+          <WebView
+            source={{ uri: `${API_BASE_URL}/api/auth/google` }}
+            style={{ flex: 1 }}
+            onNavigationStateChange={async (navState) => {
+              const url = navState.url;
+              if (url.includes('/auth-callback')) {
+                const match = url.match(/token=([^&]+)/);
+                if (match && match[1]) {
+                  const token = match[1];
+                  setGoogleModalVisible(false);
+                  setLoading(true);
+                  try {
+                    setAuthToken(token);
+                    const user = await authApi.getMe();
+                    await login(user, token);
+                  } catch (err) {
+                    setError('Đăng nhập bằng Google thất bại');
+                  } finally {
+                    setLoading(false);
+                  }
+                }
+              }
+            }}
+          />
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -123,4 +178,58 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  orDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  orText: {
+    marginHorizontal: 12,
+    color: colors.textSecondary,
+    fontSize: 12,
+    textTransform: 'uppercase',
+  },
+  googleBtn: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+    elevation: 1,
+  },
+  googleBtnText: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    height: 56,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: '#fff',
+  },
+  closeBtn: {
+    padding: 4,
+  },
+  modalHeaderTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+  },
 });
