@@ -127,6 +127,10 @@ export const createBook = asyncHandler(async (req: Request, res: Response) => {
     slug: req.body.slug ? toSlug(req.body.slug) : toSlug(req.body.title)
   };
 
+  if (payload.discountPrice !== undefined && payload.discountPrice > payload.price) {
+    throw new ApiError(400, "Giá khuyến mãi không được lớn hơn giá gốc");
+  }
+
   const category = await Category.findById(payload.category);
   if (!category || !category.parent) {
     throw new ApiError(400, "Sách phải thuộc danh mục con của Động vật hoặc Thực vật");
@@ -154,6 +158,13 @@ export const updateBook = asyncHandler(async (req: Request, res: Response) => {
   const query = Types.ObjectId.isValid(req.params.id)
     ? { _id: req.params.id }
     : { slug: req.params.id };
+
+  if (update.discountPrice !== undefined) {
+    const currentPrice = update.price ?? (await Book.findOne(query).select("price"))?.price;
+    if (currentPrice !== undefined && update.discountPrice > currentPrice) {
+      throw new ApiError(400, "Giá khuyến mãi không được lớn hơn giá gốc");
+    }
+  }
 
   const book = await Book.findOneAndUpdate(query, update, {
     new: true,

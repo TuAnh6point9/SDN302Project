@@ -37,16 +37,10 @@ const bookSchema = new Schema<IBook>(
     publisher: { type: String, trim: true },
     description: { type: String, required: true, trim: true },
     price: { type: Number, required: true, min: 0 },
-    discountPrice: {
-      type: Number,
-      min: 0,
-      validate: {
-        validator(this: IBook, value?: number) {
-          return value === undefined || value <= this.price;
-        },
-        message: "Giá khuyến mãi không được lớn hơn giá gốc"
-      }
-    },
+    // So sánh discountPrice <= price được thực hiện ở bookController (createBook/updateBook),
+    // không đặt validator so sánh field ở đây: `this` trong validator không phải document
+    // khi chạy qua findOneAndUpdate (chỉ đúng document context lúc .save()), nên luôn undefined.price.
+    discountPrice: { type: Number, min: 0 },
     stockQuantity: { type: Number, required: true, min: 0, default: 0 },
     images: { type: [String], default: [] },
     category: {

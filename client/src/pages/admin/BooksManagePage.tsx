@@ -26,6 +26,7 @@ export default function BooksManagePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBookId, setEditingBookId] = useState<string | null>(null);
   const [formError, setFormError] = useState('');
+  const [discountPriceError, setDiscountPriceError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   // Form Fields
@@ -93,6 +94,7 @@ export default function BooksManagePage() {
     setIsFeatured(false);
     setUploadedImages([]);
     setFormError('');
+    setDiscountPriceError('');
     setIsModalOpen(true);
   };
 
@@ -114,6 +116,7 @@ export default function BooksManagePage() {
     setIsFeatured(book.isFeatured);
     setUploadedImages(book.images);
     setFormError('');
+    setDiscountPriceError('');
     setIsModalOpen(true);
   };
 
@@ -197,6 +200,12 @@ export default function BooksManagePage() {
       setFormError('Vui lòng chọn danh mục cho sách.');
       return;
     }
+
+    if (discountPrice !== undefined && discountPrice > price) {
+      setDiscountPriceError('Giá khuyến mãi không được lớn hơn giá gốc.');
+      return;
+    }
+    setDiscountPriceError('');
 
     const tags = tagsInput
       .split(',')
@@ -525,9 +534,27 @@ export default function BooksManagePage() {
                     type="number"
                     min={0}
                     value={price}
-                    onChange={(e) => setPrice(Number(e.target.value))}
+                    onChange={(e) => {
+                      setPrice(Number(e.target.value));
+                      if (discountPriceError) setDiscountPriceError('');
+                    }}
                     className="input-field !py-2 text-sm"
                   />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">Giá khuyến mãi (VND)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={discountPrice ?? ''}
+                    onChange={(e) => {
+                      setDiscountPrice(e.target.value ? Number(e.target.value) : undefined);
+                      if (discountPriceError) setDiscountPriceError('');
+                    }}
+                    placeholder="Để trống nếu không giảm giá"
+                    className={`input-field !py-2 text-sm ${discountPriceError ? 'border-red-500 focus:ring-red-100 focus:border-red-500' : ''}`}
+                  />
+                  {discountPriceError && <p className="text-red-600 text-xs mt-1">{discountPriceError}</p>}
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">Mã ISBN</label>
