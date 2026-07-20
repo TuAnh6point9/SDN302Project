@@ -2,7 +2,7 @@ import apiClient from './client';
 import type {
   IAuthResponse, IBook, ICart, ICategory, INotification, IOrder, IPagination,
   IReview, IRewardHistoryItem, IRewardStatus, IShippingAddress, IUser, IVoucher,
-  PaymentMethod,
+  PaymentMethod, IAdminOverview,
 } from '../types/models';
 
 export const authApi = {
@@ -76,11 +76,18 @@ export const orderApi = {
     (await apiClient.get(`/api/orders/${id}`)).data.order,
   cancelOrder: async (id: string, cancelReason?: string): Promise<IOrder> =>
     (await apiClient.put(`/api/orders/${id}/cancel`, { cancelReason })).data.order,
+  getAllOrders: async (): Promise<IOrder[]> =>
+    (await apiClient.get('/api/orders/all')).data.orders,
 };
 
 export const paymentApi = {
   createPayosPayment: async (orderId: string): Promise<{ checkoutUrl?: string }> =>
     (await apiClient.post(`/api/payments/payos/orders/${orderId}/create`)).data.payment ?? {},
+};
+
+export const statsApi = {
+  getAdminOverview: async (): Promise<IAdminOverview> =>
+    (await apiClient.get('/api/stats/admin/overview')).data,
 };
 
 export const voucherApi = {

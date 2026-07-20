@@ -14,6 +14,7 @@ import OrderDetailScreen from '../screens/OrderDetailScreen';
 import OtpScreen from '../screens/OtpScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import WishlistScreen from '../screens/WishlistScreen';
+import AdminDashboardScreen from '../screens/AdminDashboardScreen';
 import { colors } from '../theme/colors';
 import MainTabs from './MainTabs';
 import { AuthStackParamList, RootStackParamList } from './types';
@@ -43,7 +44,14 @@ export default function AppNavigator() {
       {user ? (
         <>
           <RootStack.Navigator screenOptions={stackScreenOptions}>
-            <RootStack.Screen name="Tabs" component={MainTabs} options={{ headerShown: false }} />
+            {user.role === 'admin' ? (
+              <>
+                <RootStack.Screen name="AdminDashboard" component={AdminDashboardScreen} options={{ headerShown: false }} />
+                <RootStack.Screen name="Tabs" component={MainTabs} options={{ headerShown: false }} />
+              </>
+            ) : (
+              <RootStack.Screen name="Tabs" component={MainTabs} options={{ headerShown: false }} />
+            )}
             <RootStack.Screen name="BookDetail" component={BookDetailScreen} options={{ title: 'Chi tiết sách' }} />
             <RootStack.Screen name="Checkout" component={CheckoutScreen} options={{ title: 'Đặt hàng' }} />
             <RootStack.Screen name="OrderDetail" component={OrderDetailScreen} options={{ title: 'Chi tiết đơn hàng' }} />

@@ -15,6 +15,7 @@ export type RootStackParamList = {
   Wishlist: undefined;
   Notifications: undefined;
   EditProfile: undefined;
+  AdminDashboard: undefined;
 };
 
 export type MainTabsParamList = {

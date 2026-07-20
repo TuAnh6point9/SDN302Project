@@ -105,6 +105,16 @@ export default function ProfileScreen() {
 
         {/* Menu Group Card */}
         <View style={styles.menuGroupCard}>
+          {user?.role === 'admin' && (
+            <>
+              <MenuItem 
+                icon={Settings} 
+                title="Bảng điều khiển Admin" 
+                onPress={() => navigation.navigate('AdminDashboard')} 
+              />
+              <View style={styles.menuDivider} />
+            </>
+          )}
           <MenuItem 
             icon={User} 
             title="Chỉnh sửa hồ sơ" 

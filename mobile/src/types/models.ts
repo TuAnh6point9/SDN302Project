@@ -162,3 +162,27 @@ export interface IPagination {
   total: number;
   totalPages: number;
 }
+
+export interface IRevenuePoint {
+  day: string;
+  revenue: number;
+  orders: number;
+}
+
+export interface ITopBook {
+  title: string;
+  quantity: number;
+  revenue: number;
+}
+
+export interface IAdminOverview {
+  revenueByDay: IRevenuePoint[];
+  topBooks: ITopBook[];
+  ordersByStatus: { status: string; count: number }[];
+  totals: {
+    deliveredRevenue: number;
+    deliveredOrders: number;
+    totalOrders: number;
+    customers: number;
+  };
+}
