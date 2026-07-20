@@ -11,6 +11,9 @@ const formatPrice = (price: number) =>
 const toDateInput = (value?: string) => value ? value.slice(0, 10) : '';
 const toIsoOrUndefined = (value: string) => value ? new Date(value).toISOString() : undefined;
 
+const dateInputClass = (hasError: boolean) =>
+  `input-field !py-2 text-sm ${hasError ? 'border-red-500 focus:ring-red-100 focus:border-red-500' : ''}`;
+
 interface VoucherForm {
   code: string;
   type: VoucherType;
@@ -42,6 +45,7 @@ export default function VouchersManagePage() {
   const [submitting, setSubmitting] = useState(false);
   const [editingCode, setEditingCode] = useState('');
   const [form, setForm] = useState<VoucherForm>(defaultForm);
+  const [expiresAtError, setExpiresAtError] = useState('');
 
   const fetchVouchers = () => {
     setLoading(true);
@@ -63,6 +67,7 @@ export default function VouchersManagePage() {
     setEditingCode('');
     setForm(defaultForm);
     setError('');
+    setExpiresAtError('');
   };
 
   const fillEditForm = (voucher: IVoucher) => {
@@ -96,6 +101,13 @@ export default function VouchersManagePage() {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError('');
+
+    if (form.expiresAt && new Date(form.expiresAt) <= new Date()) {
+      setExpiresAtError('Ngày hết hạn phải sau ngày hôm nay.');
+      return;
+    }
+    setExpiresAtError('');
+
     setSubmitting(true);
 
     try {
@@ -166,7 +178,18 @@ export default function VouchersManagePage() {
           </div>
           <input type="number" min={0} value={form.maxDiscount} onChange={(event) => updateForm('maxDiscount', event.target.value)} className="input-field !py-2 text-sm" placeholder="Giảm tối đa" />
           <input type="number" min={1} value={form.usageLimit} onChange={(event) => updateForm('usageLimit', event.target.value)} className="input-field !py-2 text-sm" placeholder="Số lượt" />
-          <input type="date" min={new Date().toISOString().slice(0, 10)} value={form.expiresAt} onChange={(event) => updateForm('expiresAt', event.target.value)} className="input-field !py-2 text-sm" />
+          <div>
+            <input
+              type="date"
+              value={form.expiresAt}
+              onChange={(event) => {
+                updateForm('expiresAt', event.target.value);
+                if (expiresAtError) setExpiresAtError('');
+              }}
+              className={dateInputClass(!!expiresAtError)}
+            />
+            {expiresAtError && <p className="text-red-600 text-xs mt-1">{expiresAtError}</p>}
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-5">
