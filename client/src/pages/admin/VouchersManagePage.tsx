@@ -152,8 +152,14 @@ export default function VouchersManagePage() {
             <option value="percent">Phần trăm</option>
             <option value="fixed">Số tiền</option>
           </select>
-          <input type="number" min={0} required value={form.value} onChange={(event) => updateForm('value', Number(event.target.value))} className="input-field !py-2 text-sm" placeholder="Giá trị" />
-          <input type="number" min={0} value={form.minOrderValue} onChange={(event) => updateForm('minOrderValue', Number(event.target.value))} className="input-field !py-2 text-sm" placeholder="Đơn tối thiểu" />
+          <div>
+            <label className="text-xs text-text-secondary block mb-1">Giá trị</label>
+            <input type="number" min={0} required value={form.value} onChange={(event) => updateForm('value', Number(event.target.value))} className="input-field !py-2 text-sm" placeholder="Giá trị" />
+          </div>
+          <div>
+            <label className="text-xs text-text-secondary block mb-1">Đơn tối thiểu</label>
+            <input type="number" min={0} value={form.minOrderValue} onChange={(event) => updateForm('minOrderValue', Number(event.target.value))} className="input-field !py-2 text-sm" placeholder="Đơn tối thiểu" />
+          </div>
           <input type="number" min={0} value={form.maxDiscount} onChange={(event) => updateForm('maxDiscount', event.target.value)} className="input-field !py-2 text-sm" placeholder="Giảm tối đa" />
           <input type="number" min={1} value={form.usageLimit} onChange={(event) => updateForm('usageLimit', event.target.value)} className="input-field !py-2 text-sm" placeholder="Số lượt" />
           <input type="date" value={form.expiresAt} onChange={(event) => updateForm('expiresAt', event.target.value)} className="input-field !py-2 text-sm" />
