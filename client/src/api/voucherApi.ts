@@ -28,4 +28,9 @@ export const voucherApi = {
     const { data } = await apiClient.put(`/api/vouchers/${code}`, payload);
     return data.voucher;
   },
+
+  getHomepageEvent: async (): Promise<IVoucher | null> => {
+    const { data } = await apiClient.get('/api/vouchers/homepage-event');
+    return data.voucher;
+  },
 };

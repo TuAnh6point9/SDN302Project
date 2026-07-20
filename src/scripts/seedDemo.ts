@@ -296,6 +296,7 @@ const vouchers = [
     usageLimit: 500,
     usedCount: 0,
     isActive: true,
+    isHomepageEvent: true,
     expiresAt: new Date("2026-12-31T23:59:59+07:00")
   }
 ];

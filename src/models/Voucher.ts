@@ -13,6 +13,7 @@ export interface IVoucher extends Document {
   startsAt?: Date;
   expiresAt?: Date;
   isActive: boolean;
+  isHomepageEvent: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,7 +29,8 @@ const voucherSchema = new Schema<IVoucher>(
     usedCount: { type: Number, default: 0, min: 0 },
     startsAt: { type: Date },
     expiresAt: { type: Date },
-    isActive: { type: Boolean, default: true, index: true }
+    isActive: { type: Boolean, default: true, index: true },
+    isHomepageEvent: { type: Boolean, default: false, index: true }
   },
   { timestamps: true }
 );

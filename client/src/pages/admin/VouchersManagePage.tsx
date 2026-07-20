@@ -20,6 +20,7 @@ interface VoucherForm {
   usageLimit: string;
   expiresAt: string;
   isActive: boolean;
+  isHomepageEvent: boolean;
 }
 
 const defaultForm: VoucherForm = {
@@ -31,6 +32,7 @@ const defaultForm: VoucherForm = {
   usageLimit: '',
   expiresAt: '',
   isActive: true,
+  isHomepageEvent: false,
 };
 
 export default function VouchersManagePage() {
@@ -74,6 +76,7 @@ export default function VouchersManagePage() {
       usageLimit: voucher.usageLimit ? String(voucher.usageLimit) : '',
       expiresAt: toDateInput(voucher.expiresAt),
       isActive: voucher.isActive,
+      isHomepageEvent: voucher.isHomepageEvent ?? false,
     });
     setError('');
   };
@@ -87,6 +90,7 @@ export default function VouchersManagePage() {
     usageLimit: form.usageLimit ? Number(form.usageLimit) : undefined,
     expiresAt: toIsoOrUndefined(form.expiresAt),
     isActive: form.isActive,
+    isHomepageEvent: form.isHomepageEvent,
   });
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -165,10 +169,16 @@ export default function VouchersManagePage() {
           <input type="date" min={new Date().toISOString().slice(0, 10)} value={form.expiresAt} onChange={(event) => updateForm('expiresAt', event.target.value)} className="input-field !py-2 text-sm" />
         </div>
 
-        <label className="inline-flex items-center gap-2 text-sm text-text-secondary">
-          <input type="checkbox" checked={form.isActive} onChange={(event) => updateForm('isActive', event.target.checked)} />
-          Voucher đang bật
-        </label>
+        <div className="flex flex-wrap items-center gap-5">
+          <label className="inline-flex items-center gap-2 text-sm text-text-secondary">
+            <input type="checkbox" checked={form.isActive} onChange={(event) => updateForm('isActive', event.target.checked)} />
+            Voucher đang bật
+          </label>
+          <label className="inline-flex items-center gap-2 text-sm text-text-secondary">
+            <input type="checkbox" checked={form.isHomepageEvent} onChange={(event) => updateForm('isHomepageEvent', event.target.checked)} />
+            Hiển thị làm banner sự kiện trên trang chủ
+          </label>
+        </div>
 
         <button type="submit" disabled={submitting} className="btn-primary !py-2.5 text-sm">
           {editingCode ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -207,9 +217,14 @@ export default function VouchersManagePage() {
                     <td className="px-6 py-4">{voucher.usedCount}{voucher.usageLimit ? ` / ${voucher.usageLimit}` : ''}</td>
                     <td className="px-6 py-4 text-text-secondary">{voucher.expiresAt ? new Date(voucher.expiresAt).toLocaleDateString('vi-VN') : 'Không giới hạn'}</td>
                     <td className="px-6 py-4">
-                      <span className={`badge text-[11px] ${voucher.isActive ? '' : 'bg-red-50 text-red-700'}`}>
-                        {voucher.isActive ? 'Đang bật' : 'Đã tắt'}
-                      </span>
+                      <div className="flex flex-col gap-1 items-start">
+                        <span className={`badge text-[11px] ${voucher.isActive ? '' : 'bg-red-50 text-red-700'}`}>
+                          {voucher.isActive ? 'Đang bật' : 'Đã tắt'}
+                        </span>
+                        {voucher.isHomepageEvent && (
+                          <span className="badge text-[11px] bg-amber-50 text-amber-700">Banner trang chủ</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-2">

@@ -252,6 +252,7 @@ export interface IVoucher {
   startsAt?: string;
   expiresAt?: string;
   isActive: boolean;
+  isHomepageEvent?: boolean;
   createdAt: string;
   updatedAt: string;
 }

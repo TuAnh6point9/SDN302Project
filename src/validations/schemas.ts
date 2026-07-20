@@ -159,7 +159,8 @@ export const createVoucherSchema = z.object({
     expiresAt: z.string().datetime()
       .refine((value) => new Date(value) > new Date(), { message: "Ngay het han phai o tuong lai" })
       .optional(),
-    isActive: z.boolean().optional().default(true)
+    isActive: z.boolean().optional().default(true),
+    isHomepageEvent: z.boolean().optional()
   })
 });
 
