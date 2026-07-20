@@ -1,4 +1,5 @@
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { MainTabsParamList } from '../navigation/types';
 import { Leaf, Info } from 'lucide-react-native';
 import React, { useCallback, useState, useRef } from 'react';
 import {
@@ -33,6 +34,8 @@ const getVoucherStatus = (voucher: IVoucher) => {
 
 export default function RewardsScreen() {
   const { user, refreshUser } = useAuth();
+  const route = useRoute<RouteProp<MainTabsParamList, 'Rewards'>>();
+  const navigation = useNavigation();
   const [history, setHistory] = useState<IRewardHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState(false);
@@ -60,8 +63,31 @@ export default function RewardsScreen() {
       setRedeemSuccess('');
       setClaimError('');
       setClaimSuccess('');
+
+      const codeParam = route.params?.claimCode;
+      if (codeParam) {
+        setClaimCode(codeParam);
+        navigation.setParams({ claimCode: undefined } as any);
+
+        // Auto-trigger claim voucher:
+        (async () => {
+          setClaimingCode(true);
+          setClaimError('');
+          setClaimSuccess('');
+          try {
+            const res = await rewardApi.claimVoucher(codeParam);
+            setClaimSuccess(`Đã nhận voucher ${res.voucher.code}`);
+            await fetchHistory();
+          } catch (err) {
+            setClaimError(getApiErrorMessage(err, 'Không nhận được voucher'));
+          } finally {
+            setClaimingCode(false);
+          }
+        })();
+      }
+
       Promise.all([fetchHistory(), refreshUser()]).finally(() => setLoading(false));
-    }, [fetchHistory, refreshUser])
+    }, [fetchHistory, refreshUser, route.params?.claimCode])
   );
 
   const handleRedeem = async () => {

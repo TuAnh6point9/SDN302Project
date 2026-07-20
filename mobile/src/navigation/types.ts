@@ -20,7 +20,7 @@ export type RootStackParamList = {
 export type MainTabsParamList = {
   Home: undefined;
   CartTab: undefined;
-  Rewards: undefined;
+  Rewards: { claimCode?: string } | undefined;
   Orders: undefined;
   Profile: undefined;
 };

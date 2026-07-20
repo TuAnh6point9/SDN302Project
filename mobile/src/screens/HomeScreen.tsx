@@ -162,7 +162,12 @@ export default function HomeScreen() {
               </View>
               <TouchableOpacity
                 style={styles.promoBtn}
-                onPress={() => navigation.navigate('Tabs', { screen: 'Rewards' })}
+                onPress={() =>
+                  navigation.navigate('Tabs', {
+                    screen: 'Rewards',
+                    params: { claimCode: item.code },
+                  })
+                }
               >
                 <Text style={styles.promoBtnText}>Lưu mã</Text>
               </TouchableOpacity>
