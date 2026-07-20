@@ -19,24 +19,24 @@ export const calculateVoucherDiscount = async (
   const voucher = await voucherQuery;
 
   if (!voucher || !voucher.isActive) {
-    throw new ApiError(400, "Ma giam gia khong hop le");
+    throw new ApiError(400, "Mã giảm giá không hợp lệ");
   }
 
   const now = new Date();
   if (voucher.startsAt && voucher.startsAt > now) {
-    throw new ApiError(400, "Ma giam gia chua den thoi gian su dung");
+    throw new ApiError(400, "Mã giảm giá chưa đến thời gian sử dụng");
   }
 
   if (voucher.expiresAt && voucher.expiresAt < now) {
-    throw new ApiError(400, "Ma giam gia da het han");
+    throw new ApiError(400, "Mã giảm giá đã hết hạn");
   }
 
   if (voucher.usageLimit && voucher.usedCount >= voucher.usageLimit) {
-    throw new ApiError(400, "Ma giam gia da het luot su dung");
+    throw new ApiError(400, "Mã giảm giá đã hết lượt sử dụng");
   }
 
   if (subtotal < voucher.minOrderValue) {
-    throw new ApiError(400, "Don hang chua dat gia tri toi thieu cua voucher");
+    throw new ApiError(400, "Đơn hàng chưa đạt giá trị tối thiểu của voucher");
   }
 
   const rawDiscount = voucher.type === "percent"

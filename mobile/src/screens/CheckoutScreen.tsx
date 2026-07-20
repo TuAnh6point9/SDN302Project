@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   },
   applyText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   voucherOk: { fontSize: 12, color: colors.success, fontWeight: '600' },
-  voucherErr: { fontSize: 12, color: colors.error },
+  voucherErr: { fontSize: 12, color: colors.error, fontWeight: '600' },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 2 },
   summaryItem: { flex: 1, fontSize: 13, color: colors.textSecondary },
   summaryLabel: { fontSize: 13, color: colors.textSecondary },
