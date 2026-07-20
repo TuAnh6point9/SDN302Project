@@ -122,7 +122,10 @@ export interface IVoucher {
   value: number;
   minOrderValue: number;
   maxDiscount?: number;
+  usageLimit?: number;
+  usedCount?: number;
   expiresAt?: string;
+  isActive?: boolean;
 }
 
 export type RewardReason = 'daily_login' | 'purchase' | 'review' | 'redeem_voucher';
@@ -140,6 +143,7 @@ export interface IRewardHistoryItem {
   day: string;
   reason: RewardReason;
   balanceAfter?: number;
+  refId?: string | IVoucher | null;
   createdAt: string;
 }
 

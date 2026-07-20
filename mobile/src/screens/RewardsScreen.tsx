@@ -15,10 +15,20 @@ import { getApiErrorMessage } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { colors, radius, spacing } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { IRewardHistoryItem } from '../types/models';
+import { IRewardHistoryItem, IVoucher } from '../types/models';
 import { formatDate, formatPrice } from '../utils/format';
 
 const REDEEM_POINTS = 1000;
+
+const getVoucherStatus = (voucher: IVoucher) => {
+  if ((voucher.usedCount ?? 0) >= (voucher.usageLimit ?? 1)) {
+    return { label: 'Đã dùng', color: colors.textSecondary, backgroundColor: colors.divider };
+  }
+  if (voucher.expiresAt && new Date(voucher.expiresAt) < new Date()) {
+    return { label: 'Hết hạn', color: colors.error, backgroundColor: '#FDECEC' };
+  }
+  return { label: 'Còn hạn', color: colors.primary, backgroundColor: colors.primaryLight };
+};
 
 export default function RewardsScreen() {
   const { user, refreshUser } = useAuth();
@@ -78,6 +88,10 @@ export default function RewardsScreen() {
     return reason;
   };
 
+  const myVouchers = history
+    .filter((item) => item.reason === 'redeem_voucher' && item.refId && typeof item.refId === 'object')
+    .map((item) => item.refId as IVoucher);
+
   const renderHeader = () => (
     <View style={styles.headerContainer}>
       <View style={styles.heroCard}>
@@ -112,6 +126,31 @@ export default function RewardsScreen() {
         </TouchableOpacity>
         {redeemError ? <Text style={styles.redeemError}>{redeemError}</Text> : null}
         {redeemSuccess ? <Text style={styles.redeemSuccess}>{redeemSuccess}</Text> : null}
+      </View>
+
+      <Text style={[styles.sectionTitle, { marginTop: spacing.lg }]}>Voucher của tôi</Text>
+      <View style={styles.vouchersCard}>
+        {myVouchers.length === 0 ? (
+          <Text style={styles.voucherEmpty}>Bạn chưa có voucher nào. Đổi điểm ở trên để nhận voucher đầu tiên.</Text>
+        ) : (
+          myVouchers.map((voucher) => {
+            const status = getVoucherStatus(voucher);
+            return (
+              <View key={voucher._id} style={styles.voucherRow}>
+                <View style={styles.voucherInfo}>
+                  <Text style={styles.voucherCode}>{voucher.code}</Text>
+                  <Text style={styles.voucherMeta}>
+                    Giảm {formatPrice(voucher.value)}
+                    {voucher.expiresAt ? `, HSD ${new Date(voucher.expiresAt).toLocaleDateString('vi-VN')}` : ''}
+                  </Text>
+                </View>
+                <View style={[styles.voucherStatus, { backgroundColor: status.backgroundColor }]}>
+                  <Text style={[styles.voucherStatusText, { color: status.color }]}>{status.label}</Text>
+                </View>
+              </View>
+            );
+          })
+        )}
       </View>
 
       <Text style={[styles.sectionTitle, { marginTop: spacing.lg }]}>Lịch sử điểm</Text>
@@ -302,6 +341,54 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '700',
     textAlign: 'center',
+  },
+  vouchersCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  voucherEmpty: {
+    ...typography.body,
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  voucherRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  voucherInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  voucherCode: {
+    ...typography.h3,
+    fontSize: 15,
+    color: colors.text,
+    fontWeight: '800',
+  },
+  voucherMeta: {
+    ...typography.caption,
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  voucherStatus: {
+    borderRadius: radius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  voucherStatusText: {
+    ...typography.caption,
+    fontSize: 12,
+    fontWeight: '700',
   },
   emptyWrap: {
     paddingVertical: spacing.xl,
