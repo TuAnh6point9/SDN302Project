@@ -6,6 +6,7 @@ import {
   FlatList,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -37,6 +38,10 @@ export default function RewardsScreen() {
   const [redeeming, setRedeeming] = useState(false);
   const [redeemError, setRedeemError] = useState('');
   const [redeemSuccess, setRedeemSuccess] = useState('');
+  const [claimCode, setClaimCode] = useState('');
+  const [claimingCode, setClaimingCode] = useState(false);
+  const [claimError, setClaimError] = useState('');
+  const [claimSuccess, setClaimSuccess] = useState('');
 
   const flatListRef = useRef<FlatList>(null);
 
@@ -53,6 +58,8 @@ export default function RewardsScreen() {
       // Tab navigator không unmount màn hình — xóa thông báo cũ mỗi lần quay lại
       setRedeemError('');
       setRedeemSuccess('');
+      setClaimError('');
+      setClaimSuccess('');
       Promise.all([fetchHistory(), refreshUser()]).finally(() => setLoading(false));
     }, [fetchHistory, refreshUser])
   );
@@ -80,16 +87,40 @@ export default function RewardsScreen() {
     flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
   };
 
+  const handleClaimVoucher = async () => {
+    const code = claimCode.trim().toUpperCase();
+    if (!code) return;
+    setClaimingCode(true);
+    setClaimError('');
+    setClaimSuccess('');
+    try {
+      const res = await rewardApi.claimVoucher(code);
+      setClaimCode('');
+      setClaimSuccess(`Đã nhận voucher ${res.voucher.code}`);
+      await fetchHistory();
+    } catch (err) {
+      setClaimError(getApiErrorMessage(err, 'Không nhận được voucher'));
+    } finally {
+      setClaimingCode(false);
+    }
+  };
+
   const getReasonLabel = (reason: string) => {
     if (reason === 'purchase') return 'Thưởng mua hàng';
     if (reason === 'daily_login') return 'Điểm danh hàng ngày';
     if (reason === 'review') return 'Viết đánh giá';
     if (reason === 'redeem_voucher') return 'Đổi điểm lấy voucher';
+    if (reason === 'claimed_voucher') return 'Nhận voucher bằng mã';
     return reason;
   };
 
   const myVouchers = history
-    .filter((item) => item.reason === 'redeem_voucher' && item.refId && typeof item.refId === 'object')
+    .filter(
+      (item) =>
+        (item.reason === 'redeem_voucher' || item.reason === 'claimed_voucher') &&
+        item.refId &&
+        typeof item.refId === 'object'
+    )
     .map((item) => item.refId as IVoucher);
 
   const renderHeader = () => (
@@ -126,6 +157,34 @@ export default function RewardsScreen() {
         </TouchableOpacity>
         {redeemError ? <Text style={styles.redeemError}>{redeemError}</Text> : null}
         {redeemSuccess ? <Text style={styles.redeemSuccess}>{redeemSuccess}</Text> : null}
+      </View>
+
+      <Text style={[styles.sectionTitle, { marginTop: spacing.lg }]}>Nhập mã voucher</Text>
+      <Text style={styles.sectionSubtitle}>Lưu mã khuyến mãi công khai vào danh sách của bạn.</Text>
+      <View style={styles.claimCard}>
+        <View style={styles.claimRow}>
+          <TextInput
+            style={styles.claimInput}
+            value={claimCode}
+            onChangeText={(value) => setClaimCode(value.toUpperCase())}
+            placeholder="Nhập mã voucher"
+            placeholderTextColor={colors.textPlaceholder}
+            autoCapitalize="characters"
+          />
+          <TouchableOpacity
+            style={[styles.claimBtn, (!claimCode.trim() || claimingCode) && styles.claimBtnDisabled]}
+            onPress={handleClaimVoucher}
+            disabled={!claimCode.trim() || claimingCode}
+          >
+            {claimingCode ? (
+              <ActivityIndicator color={colors.surface} />
+            ) : (
+              <Text style={styles.claimBtnText}>Nhận</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+        {claimError ? <Text style={styles.redeemError}>{claimError}</Text> : null}
+        {claimSuccess ? <Text style={styles.redeemSuccess}>{claimSuccess}</Text> : null}
       </View>
 
       <Text style={[styles.sectionTitle, { marginTop: spacing.lg }]}>Voucher của tôi</Text>
@@ -341,6 +400,50 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '700',
     textAlign: 'center',
+  },
+  claimCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  claimRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  claimInput: {
+    flex: 1,
+    height: 48,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.background,
+    ...typography.body,
+    fontSize: 15,
+    color: colors.text,
+    fontWeight: '700',
+  },
+  claimBtn: {
+    height: 48,
+    minWidth: 78,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+  },
+  claimBtnDisabled: {
+    backgroundColor: colors.disabled,
+  },
+  claimBtnText: {
+    ...typography.h3,
+    fontSize: 15,
+    color: colors.surface,
+    fontWeight: '700',
   },
   vouchersCard: {
     backgroundColor: colors.surface,

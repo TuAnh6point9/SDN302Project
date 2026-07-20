@@ -128,7 +128,7 @@ export interface IVoucher {
   isActive?: boolean;
 }
 
-export type RewardReason = 'daily_login' | 'purchase' | 'review' | 'redeem_voucher';
+export type RewardReason = 'daily_login' | 'purchase' | 'review' | 'redeem_voucher' | 'claimed_voucher';
 
 export interface IRewardStatus {
   canClaim: boolean;

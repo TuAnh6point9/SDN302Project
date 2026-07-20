@@ -103,6 +103,8 @@ export const rewardApi = {
     (await apiClient.get('/api/rewards/history')).data.history,
   redeem: async (points: number): Promise<{ message: string; user: IUser; voucher: IVoucher }> =>
     (await apiClient.post('/api/rewards/redeem', { points })).data,
+  claimVoucher: async (code: string): Promise<{ message: string; voucher: IVoucher }> =>
+    (await apiClient.post('/api/rewards/claim-voucher', { code })).data,
 };
 
 export const subscriptionApi = {
