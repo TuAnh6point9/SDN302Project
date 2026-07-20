@@ -12,13 +12,14 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { bookApi, categoryApi } from '../api';
+import { bookApi, categoryApi, voucherApi } from '../api';
 import BookCard from '../components/BookCard';
 import GreenInput from '../components/GreenInput';
 import { RootStackParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { IBook, ICategory } from '../types/models';
+import { IBook, ICategory, IVoucher } from '../types/models';
+import { formatPrice } from '../utils/format';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type SortValue = 'newest' | 'price_asc' | 'price_desc' | 'featured';
@@ -36,6 +37,7 @@ export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
   const [books, setBooks] = useState<IBook[]>([]);
   const [bestSellerIds, setBestSellerIds] = useState<Set<string>>(new Set());
+  const [eventVouchers, setEventVouchers] = useState<IVoucher[]>([]);
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -57,6 +59,9 @@ export default function HomeScreen() {
     bookApi.getBestSellerIds()
       .then((ids) => setBestSellerIds(new Set(ids)))
       .catch(() => setBestSellerIds(new Set()));
+    voucherApi.getHomepageEvents()
+      .then(setEventVouchers)
+      .catch(() => setEventVouchers([]));
   }, []);
 
   const fetchBooks = useCallback(
@@ -135,6 +140,36 @@ export default function HomeScreen() {
           style={styles.heroImage}
         />
       </View>
+
+      {eventVouchers.length > 0 && (
+        <FlatList
+          horizontal
+          data={eventVouchers}
+          keyExtractor={(item) => item._id}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.promoList}
+          snapToAlignment="start"
+          decelerationRate="fast"
+          renderItem={({ item }) => (
+            <View style={styles.promoCard}>
+              <View style={styles.promoContent}>
+                <Text style={styles.promoEyebrow}>Voucher sự kiện</Text>
+                <Text style={styles.promoCode}>{item.code}</Text>
+                <Text style={styles.promoText}>
+                  Giảm {formatPrice(item.value)}
+                  {item.minOrderValue > 0 ? ` cho đơn từ ${formatPrice(item.minOrderValue)}` : ''}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.promoBtn}
+                onPress={() => navigation.navigate('Tabs', { screen: 'Rewards' })}
+              >
+                <Text style={styles.promoBtnText}>Lưu mã</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        />
+      )}
 
       {/* Categories Row */}
       <View style={styles.sectionHeader}>
@@ -316,6 +351,57 @@ const styles = StyleSheet.create({
   heroImage: {
     width: 130,
     height: '100%',
+  },
+  promoList: {
+    paddingHorizontal: spacing.md,
+    gap: spacing.md,
+    paddingBottom: spacing.lg,
+  },
+  promoCard: {
+    width: 300,
+    minHeight: 116,
+    backgroundColor: colors.primaryDark,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  promoContent: {
+    flex: 1,
+    gap: 3,
+  },
+  promoEyebrow: {
+    ...typography.caption,
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  promoCode: {
+    ...typography.h2,
+    color: colors.surface,
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  promoText: {
+    ...typography.caption,
+    color: 'rgba(255,255,255,0.82)',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  promoBtn: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  promoBtnText: {
+    ...typography.h3,
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: '800',
   },
   sectionHeader: {
     paddingHorizontal: spacing.md,

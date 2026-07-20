@@ -86,6 +86,8 @@ export const paymentApi = {
 export const voucherApi = {
   validate: async (code: string, subtotal: number): Promise<{ discountTotal: number; voucherCode?: string }> =>
     (await apiClient.get(`/api/vouchers/validate/${code}`, { params: { subtotal } })).data,
+  getHomepageEvents: async (): Promise<IVoucher[]> =>
+    (await apiClient.get('/api/vouchers/homepage-event')).data.vouchers,
 };
 
 export const reviewApi = {
