@@ -14,8 +14,8 @@ const toIsoOrUndefined = (value: string) => value ? new Date(value).toISOString(
 interface VoucherForm {
   code: string;
   type: VoucherType;
-  value: number;
-  minOrderValue: number;
+  value: string;
+  minOrderValue: string;
   maxDiscount: string;
   usageLimit: string;
   expiresAt: string;
@@ -25,8 +25,8 @@ interface VoucherForm {
 const defaultForm: VoucherForm = {
   code: '',
   type: 'percent',
-  value: 10,
-  minOrderValue: 0,
+  value: '10',
+  minOrderValue: '0',
   maxDiscount: '',
   usageLimit: '',
   expiresAt: '',
@@ -68,8 +68,8 @@ export default function VouchersManagePage() {
     setForm({
       code: voucher.code,
       type: voucher.type,
-      value: voucher.value,
-      minOrderValue: voucher.minOrderValue,
+      value: String(voucher.value),
+      minOrderValue: String(voucher.minOrderValue),
       maxDiscount: voucher.maxDiscount ? String(voucher.maxDiscount) : '',
       usageLimit: voucher.usageLimit ? String(voucher.usageLimit) : '',
       expiresAt: toDateInput(voucher.expiresAt),
@@ -82,7 +82,7 @@ export default function VouchersManagePage() {
     code: form.code.trim().toUpperCase(),
     type: form.type,
     value: Number(form.value),
-    minOrderValue: Number(form.minOrderValue),
+    minOrderValue: form.minOrderValue ? Number(form.minOrderValue) : 0,
     maxDiscount: form.maxDiscount ? Number(form.maxDiscount) : undefined,
     usageLimit: form.usageLimit ? Number(form.usageLimit) : undefined,
     expiresAt: toIsoOrUndefined(form.expiresAt),
@@ -154,15 +154,15 @@ export default function VouchersManagePage() {
           </select>
           <div>
             <label className="text-xs text-text-secondary block mb-1">Giá trị</label>
-            <input type="number" min={0} required value={form.value} onChange={(event) => updateForm('value', Number(event.target.value))} className="input-field !py-2 text-sm" placeholder="Giá trị" />
+            <input type="number" min={0} required value={form.value} onChange={(event) => updateForm('value', event.target.value)} className="input-field !py-2 text-sm" placeholder="Giá trị" />
           </div>
           <div>
             <label className="text-xs text-text-secondary block mb-1">Đơn tối thiểu</label>
-            <input type="number" min={0} value={form.minOrderValue} onChange={(event) => updateForm('minOrderValue', Number(event.target.value))} className="input-field !py-2 text-sm" placeholder="Đơn tối thiểu" />
+            <input type="number" min={0} value={form.minOrderValue} onChange={(event) => updateForm('minOrderValue', event.target.value)} className="input-field !py-2 text-sm" placeholder="Đơn tối thiểu" />
           </div>
           <input type="number" min={0} value={form.maxDiscount} onChange={(event) => updateForm('maxDiscount', event.target.value)} className="input-field !py-2 text-sm" placeholder="Giảm tối đa" />
           <input type="number" min={1} value={form.usageLimit} onChange={(event) => updateForm('usageLimit', event.target.value)} className="input-field !py-2 text-sm" placeholder="Số lượt" />
-          <input type="date" value={form.expiresAt} onChange={(event) => updateForm('expiresAt', event.target.value)} className="input-field !py-2 text-sm" />
+          <input type="date" min={new Date().toISOString().slice(0, 10)} value={form.expiresAt} onChange={(event) => updateForm('expiresAt', event.target.value)} className="input-field !py-2 text-sm" />
         </div>
 
         <label className="inline-flex items-center gap-2 text-sm text-text-secondary">
