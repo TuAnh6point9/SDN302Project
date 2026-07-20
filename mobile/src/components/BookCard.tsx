@@ -12,9 +12,17 @@ interface Props {
   book: IBook;
   onPress: () => void;
   isBestSeller?: boolean;
+  isWishlisted?: boolean;
+  onToggleWishlist?: () => void;
 }
 
-export default function BookCard({ book, onPress, isBestSeller = false }: Props) {
+export default function BookCard({
+  book,
+  onPress,
+  isBestSeller = false,
+  isWishlisted = false,
+  onToggleWishlist,
+}: Props) {
   const { addItem } = useCart();
   
   const price = book.discountPrice ?? book.price;
@@ -50,8 +58,20 @@ export default function BookCard({ book, onPress, isBestSeller = false }: Props)
             <Text style={styles.badgeText}>Mới</Text>
           </View>
         ) : null}
-        <TouchableOpacity style={styles.favoriteBtn}>
-          <Heart size={20} color={colors.textSecondary} />
+        <TouchableOpacity
+          style={styles.favoriteBtn}
+          onPress={(e) => {
+            e.stopPropagation();
+            if (onToggleWishlist) {
+              onToggleWishlist();
+            }
+          }}
+        >
+          <Heart
+            size={20}
+            color={isWishlisted ? colors.error : colors.textSecondary}
+            fill={isWishlisted ? colors.error : 'none'}
+          />
         </TouchableOpacity>
         {outOfStock && (
           <View style={styles.outOfStock}>

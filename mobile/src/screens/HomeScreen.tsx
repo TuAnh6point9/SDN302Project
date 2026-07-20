@@ -1,6 +1,6 @@
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Leaf, Search as SearchIcon, SlidersHorizontal, ChevronRight } from 'lucide-react-native';
+import { Leaf, Search as SearchIcon, SlidersHorizontal, ChevronRight, Heart } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { bookApi, categoryApi, voucherApi } from '../api';
+import { bookApi, categoryApi, voucherApi, wishlistApi } from '../api';
 import BookCard from '../components/BookCard';
 import GreenInput from '../components/GreenInput';
 import { RootStackParamList } from '../navigation/types';
@@ -48,6 +48,65 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
+  const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
+  const [wishlistBooks, setWishlistBooks] = useState<IBook[]>([]);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      wishlistApi.getWishlist()
+        .then((list) => {
+          setWishlistIds(new Set(list.map((item) => item._id)));
+          setWishlistBooks(list);
+        })
+        .catch(() => {
+          setWishlistIds(new Set());
+          setWishlistBooks([]);
+        });
+    }, [])
+  );
+
+  const toggleWishlist = async (bookId: string) => {
+    try {
+      let updatedList: IBook[];
+      if (wishlistIds.has(bookId)) {
+        updatedList = await wishlistApi.remove(bookId);
+      } else {
+        updatedList = await wishlistApi.add(bookId);
+      }
+      setWishlistBooks(updatedList);
+      setWishlistIds(new Set(updatedList.map((b) => b._id)));
+    } catch (err) {
+      console.log('Error toggling wishlist', err);
+    }
+  };
+
+  const getFilteredWishlist = () => {
+    let list = [...wishlistBooks];
+    if (category) {
+      list = list.filter((b) => {
+        const catId = typeof b.category === 'object' ? b.category?._id : b.category;
+        return catId === category;
+      });
+    }
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase();
+      list = list.filter((b) => 
+        b.title.toLowerCase().includes(q) || 
+        b.author.toLowerCase().includes(q)
+      );
+    }
+    if (sort === 'newest') {
+      list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    } else if (sort === 'price_asc') {
+      list.sort((a, b) => (a.discountPrice ?? a.price) - (b.discountPrice ?? b.price));
+    } else if (sort === 'price_desc') {
+      list.sort((a, b) => (b.discountPrice ?? b.price) - (a.discountPrice ?? a.price));
+    } else if (sort === 'featured') {
+      list.sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0));
+    }
+    return list;
+  };
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 400);
@@ -94,7 +153,7 @@ export default function HomeScreen() {
   }, [fetchBooks]);
 
   const loadMore = () => {
-    if (!loadingMore && !loading && page < totalPages) {
+    if (!showFavoritesOnly && !loadingMore && !loading && page < totalPages) {
       fetchBooks(page + 1, true);
     }
   };
@@ -118,8 +177,18 @@ export default function HomeScreen() {
           onChangeText={setSearch}
           isSearch
         />
-        <TouchableOpacity style={styles.filterBtn}>
-          <SlidersHorizontal size={20} color={colors.surface} />
+        <TouchableOpacity
+          style={[
+            styles.filterBtn,
+            showFavoritesOnly && { backgroundColor: colors.error }
+          ]}
+          onPress={() => setShowFavoritesOnly(!showFavoritesOnly)}
+        >
+          {showFavoritesOnly ? (
+            <Heart size={20} color={colors.surface} fill={colors.surface} />
+          ) : (
+            <SlidersHorizontal size={20} color={colors.surface} />
+          )}
         </TouchableOpacity>
       </View>
 
@@ -239,22 +308,28 @@ export default function HomeScreen() {
         </View>
       ) : (
         <FlatList
-          data={books}
+          data={showFavoritesOnly ? getFilteredWishlist() : books}
           keyExtractor={(b) => b._id}
           numColumns={2}
           contentContainerStyle={styles.grid}
-          ListHeaderComponent={renderHeader}
+          ListHeaderComponent={renderHeader()}
           onEndReached={loadMore}
           onEndReachedThreshold={0.4}
           ListFooterComponent={
-            loadingMore || loading ? (
+            !showFavoritesOnly && (loadingMore || loading) ? (
               <ActivityIndicator color={colors.primary} style={{ margin: spacing.md }} />
             ) : null
           }
           ListEmptyComponent={
-            !loading ? (
+            showFavoritesOnly || !loading ? (
               <View style={styles.center}>
-                <Text style={styles.emptyText}>Không tìm thấy sách phù hợp</Text>
+                <Text style={styles.emptyText}>
+                  {showFavoritesOnly
+                    ? (debouncedSearch || category
+                        ? 'Không tìm thấy sách yêu thích phù hợp'
+                        : 'Danh sách yêu thích trống')
+                    : 'Không tìm thấy sách phù hợp'}
+                </Text>
               </View>
             ) : null
           }
@@ -262,6 +337,8 @@ export default function HomeScreen() {
             <BookCard
               book={item}
               isBestSeller={bestSellerIds.has(item._id)}
+              isWishlisted={wishlistIds.has(item._id)}
+              onToggleWishlist={() => toggleWishlist(item._id)}
               onPress={() => navigation.navigate('BookDetail', { slug: item.slug })}
             />
           )}

@@ -26,6 +26,8 @@ export interface IBook {
   ratingAverage: number;
   numReviews: number;
   isFeatured: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface IUserAddress {

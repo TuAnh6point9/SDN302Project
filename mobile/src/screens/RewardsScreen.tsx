@@ -262,7 +262,7 @@ export default function RewardsScreen() {
           data={history}
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.listContent}
-          ListHeaderComponent={renderHeader}
+          ListHeaderComponent={renderHeader()}
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
               <Text style={styles.emptyText}>Chưa có lịch sử điểm.</Text>
