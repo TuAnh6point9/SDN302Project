@@ -34,6 +34,7 @@ export default function BookDetailScreen() {
   const { addItem } = useCart();
 
   const [book, setBook] = useState<IBook | null>(null);
+  const [relatedBooks, setRelatedBooks] = useState<IBook[]>([]);
   const [reviews, setReviews] = useState<IReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [imageIndex, setImageIndex] = useState(0);
@@ -53,6 +54,15 @@ export default function BookDetailScreen() {
       try {
         const b = await bookApi.getBook(params.slug);
         setBook(b);
+
+        const categoryId = typeof b.category === 'object' ? b.category._id : b.category;
+        if (categoryId) {
+          bookApi.getBooks({ category: categoryId, limit: 8 })
+            .then((res) => setRelatedBooks(res.books.filter((item) => item._id !== b._id).slice(0, 6)))
+            .catch(() => setRelatedBooks([]));
+        } else {
+          setRelatedBooks([]);
+        }
         
         // Fetch reviews
         const r = await reviewApi.getBookReviews(b._id);
@@ -402,6 +412,44 @@ export default function BookDetailScreen() {
             </View>
           )}
 
+          {relatedBooks.length > 0 && (
+            <View style={styles.relatedSection}>
+              <View style={styles.relatedHeader}>
+                <Text style={styles.sectionTitle}>Sách liên quan</Text>
+                <Text style={styles.relatedSubtitle}>Cùng danh mục {categoryName || 'sách này'}</Text>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.relatedList}
+              >
+                {relatedBooks.map((item) => {
+                  const relatedPrice = item.discountPrice ?? item.price;
+                  const relatedImage = item.images[0];
+                  return (
+                    <TouchableOpacity
+                      key={item._id}
+                      style={styles.relatedCard}
+                      activeOpacity={0.9}
+                      onPress={() => navigation.push('BookDetail', { slug: item.slug })}
+                    >
+                      <Image
+                        source={{ uri: resolveImageUrl(relatedImage) }}
+                        style={styles.relatedImage}
+                        resizeMode="cover"
+                      />
+                      <View style={styles.relatedBody}>
+                        <Text style={styles.relatedTitle} numberOfLines={2}>{item.title}</Text>
+                        <Text style={styles.relatedAuthor} numberOfLines={1}>{item.author}</Text>
+                        <Text style={styles.relatedPrice}>{formatPrice(relatedPrice)}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
         </View>
       </ScrollView>
 
@@ -739,6 +787,57 @@ const styles = StyleSheet.create({
     minHeight: 80,
     ...typography.body,
     textAlignVertical: 'top',
+  },
+  relatedSection: {
+    marginTop: spacing.lg,
+    gap: spacing.sm,
+  },
+  relatedHeader: {
+    gap: 2,
+  },
+  relatedSubtitle: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    fontSize: 13,
+  },
+  relatedList: {
+    gap: spacing.md,
+    paddingRight: spacing.md,
+  },
+  relatedCard: {
+    width: 142,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+  },
+  relatedImage: {
+    width: '100%',
+    height: 172,
+    backgroundColor: colors.divider,
+  },
+  relatedBody: {
+    padding: spacing.sm,
+    gap: 3,
+  },
+  relatedTitle: {
+    ...typography.h3,
+    fontSize: 13,
+    lineHeight: 18,
+    minHeight: 36,
+    color: colors.text,
+  },
+  relatedAuthor: {
+    ...typography.caption,
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  relatedPrice: {
+    ...typography.h3,
+    fontSize: 14,
+    color: colors.primary,
+    marginTop: 2,
   },
   
   // Bottom Bar Sticky
