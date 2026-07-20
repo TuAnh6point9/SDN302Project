@@ -4,6 +4,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { bookApi } from '../api/bookApi';
 import { reviewApi } from '../api/reviewApi';
 import { subscriptionApi } from '../api/subscriptionApi';
+import BookCard from '../components/BookCard';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
@@ -35,6 +36,7 @@ export default function BookDetailPage() {
   const [subscribed, setSubscribed] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
   const [subscribeError, setSubscribeError] = useState('');
+  const [relatedBooks, setRelatedBooks] = useState<IBook[]>([]);
 
   useEffect(() => {
     if (!slug) return;
@@ -51,6 +53,20 @@ export default function BookDetailPage() {
       })
       .finally(() => setLoading(false));
   }, [slug]);
+
+  useEffect(() => {
+    if (!book) {
+      setRelatedBooks([]);
+      return;
+    }
+    const categoryParam = typeof book.category === 'object' ? book.category.slug : book.category;
+    if (!categoryParam) return;
+    bookApi.getBooks({ category: categoryParam, limit: 5 })
+      .then((res) => setRelatedBooks(res.books.filter((b) => b._id !== book._id).slice(0, 4)))
+      .catch(() => {
+        // Sách liên quan chỉ là gợi ý — lỗi thì bỏ qua, không chặn trang chi tiết
+      });
+  }, [book]);
 
   useEffect(() => {
     if (!book || !user || book.stockQuantity > 0) return;
@@ -442,6 +458,19 @@ export default function BookDetailPage() {
           </div>
         )}
       </div>
+
+      {relatedBooks.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold font-heading text-primary-dark flex items-center gap-2">
+            <BookOpen className="w-5 h-5" /> Sách liên quan
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+            {relatedBooks.map((relatedBook) => (
+              <BookCard key={relatedBook._id} book={relatedBook} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
