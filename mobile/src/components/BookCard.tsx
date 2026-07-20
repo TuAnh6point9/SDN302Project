@@ -12,9 +12,11 @@ interface Props {
   book: IBook;
   onPress: () => void;
   isBestSeller?: boolean;
+  isWishlisted?: boolean;
+  onToggleWishlist?: () => void;
 }
 
-export default function BookCard({ book, onPress, isBestSeller = false }: Props) {
+function BookCard({ book, onPress, isBestSeller = false, isWishlisted = false, onToggleWishlist }: Props) {
   const { addItem } = useCart();
   
   const price = book.discountPrice ?? book.price;
@@ -50,8 +52,19 @@ export default function BookCard({ book, onPress, isBestSeller = false }: Props)
             <Text style={styles.badgeText}>Mới</Text>
           </View>
         ) : null}
-        <TouchableOpacity style={styles.favoriteBtn}>
-          <Heart size={20} color={colors.textSecondary} />
+        <TouchableOpacity
+          style={styles.favoriteBtn}
+          onPress={(e) => {
+            e.stopPropagation();
+            onToggleWishlist?.();
+          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Heart
+            size={20}
+            color={isWishlisted ? colors.error : colors.textSecondary}
+            fill={isWishlisted ? colors.error : 'none'}
+          />
         </TouchableOpacity>
         {outOfStock && (
           <View style={styles.outOfStock}>
@@ -86,13 +99,15 @@ export default function BookCard({ book, onPress, isBestSeller = false }: Props)
   );
 }
 
+export default React.memo(BookCard);
+
 const styles = StyleSheet.create({
   card: {
     flex: 1,
     margin: 8,
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
-    borderWidth: 0, // Using shadow instead of border
+    borderWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,

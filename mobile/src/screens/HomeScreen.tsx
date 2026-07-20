@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Leaf, Search as SearchIcon, SlidersHorizontal, ChevronRight } from 'lucide-react-native';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { bookApi, categoryApi, voucherApi } from '../api';
+import { bookApi, categoryApi, voucherApi, wishlistApi } from '../api';
 import BookCard from '../components/BookCard';
 import GreenInput from '../components/GreenInput';
 import { RootStackParamList } from '../navigation/types';
@@ -48,6 +48,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
+  const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 400);
@@ -62,6 +63,9 @@ export default function HomeScreen() {
     voucherApi.getHomepageEvents()
       .then(setEventVouchers)
       .catch(() => setEventVouchers([]));
+    wishlistApi.getWishlist()
+      .then((list) => setWishlistIds(new Set(list.map((b) => b._id))))
+      .catch(() => setWishlistIds(new Set()));
   }, []);
 
   const fetchBooks = useCallback(
@@ -93,15 +97,40 @@ export default function HomeScreen() {
     fetchBooks(1, false);
   }, [fetchBooks]);
 
+
   const loadMore = () => {
     if (!loadingMore && !loading && page < totalPages) {
       fetchBooks(page + 1, true);
     }
   };
 
+  const toggleWishlist = useCallback(async (bookId: string) => {
+    const isCurrentlyWished = wishlistIds.has(bookId);
+    // Optimistic update
+    setWishlistIds((prev) => {
+      const next = new Set(prev);
+      isCurrentlyWished ? next.delete(bookId) : next.add(bookId);
+      return next;
+    });
+    try {
+      if (isCurrentlyWished) {
+        await wishlistApi.remove(bookId);
+      } else {
+        await wishlistApi.add(bookId);
+      }
+    } catch {
+      // Rollback
+      setWishlistIds((prev) => {
+        const next = new Set(prev);
+        isCurrentlyWished ? next.add(bookId) : next.delete(bookId);
+        return next;
+      });
+    }
+  }, [wishlistIds]);
+
   const rootCategories = categories.filter((c) => !c.parent);
 
-  const renderHeader = () => (
+  const headerElement = useMemo(() => (
     <View style={styles.headerContainer}>
       {/* Top Logo Header */}
       <View style={styles.logoRow}>
@@ -226,7 +255,8 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
     </View>
-  );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ), [search, category, sort, rootCategories, eventVouchers]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -243,7 +273,7 @@ export default function HomeScreen() {
           keyExtractor={(b) => b._id}
           numColumns={2}
           contentContainerStyle={styles.grid}
-          ListHeaderComponent={renderHeader}
+          ListHeaderComponent={headerElement}
           onEndReached={loadMore}
           onEndReachedThreshold={0.4}
           ListFooterComponent={
@@ -262,6 +292,8 @@ export default function HomeScreen() {
             <BookCard
               book={item}
               isBestSeller={bestSellerIds.has(item._id)}
+              isWishlisted={wishlistIds.has(item._id)}
+              onToggleWishlist={() => toggleWishlist(item._id)}
               onPress={() => navigation.navigate('BookDetail', { slug: item.slug })}
             />
           )}
