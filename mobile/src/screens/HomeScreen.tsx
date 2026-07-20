@@ -35,6 +35,7 @@ const SORT_OPTIONS: { label: string; value: SortValue }[] = [
 export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
   const [books, setBooks] = useState<IBook[]>([]);
+  const [bestSellerIds, setBestSellerIds] = useState<Set<string>>(new Set());
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -53,6 +54,9 @@ export default function HomeScreen() {
 
   useEffect(() => {
     categoryApi.getCategories().then(setCategories).catch(() => {});
+    bookApi.getBestSellerIds()
+      .then((ids) => setBestSellerIds(new Set(ids)))
+      .catch(() => setBestSellerIds(new Set()));
   }, []);
 
   const fetchBooks = useCallback(
@@ -215,7 +219,11 @@ export default function HomeScreen() {
             ) : null
           }
           renderItem={({ item }) => (
-            <BookCard book={item} onPress={() => navigation.navigate('BookDetail', { slug: item.slug })} />
+            <BookCard
+              book={item}
+              isBestSeller={bestSellerIds.has(item._id)}
+              onPress={() => navigation.navigate('BookDetail', { slug: item.slug })}
+            />
           )}
         />
       )}

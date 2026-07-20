@@ -37,6 +37,8 @@ export const bookApi = {
     (await apiClient.get('/api/books', { params })).data,
   getBook: async (idOrSlug: string): Promise<IBook> =>
     (await apiClient.get(`/api/books/${idOrSlug}`)).data.book,
+  getBestSellerIds: async (): Promise<string[]> =>
+    (await apiClient.get('/api/books/best-sellers')).data.bookIds,
 };
 
 export const categoryApi = {

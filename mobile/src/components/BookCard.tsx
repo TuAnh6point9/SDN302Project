@@ -11,9 +11,10 @@ import { formatPrice } from '../utils/format';
 interface Props {
   book: IBook;
   onPress: () => void;
+  isBestSeller?: boolean;
 }
 
-export default function BookCard({ book, onPress }: Props) {
+export default function BookCard({ book, onPress, isBestSeller = false }: Props) {
   const { addItem } = useCart();
   
   const price = book.discountPrice ?? book.price;
@@ -39,6 +40,10 @@ export default function BookCard({ book, onPress }: Props) {
         {hasDiscount ? (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>-{discountPercent}%</Text>
+          </View>
+        ) : isBestSeller ? (
+          <View style={[styles.badge, styles.bestSellerBadge]}>
+            <Text style={styles.badgeText}>Bán chạy</Text>
           </View>
         ) : book.isFeatured ? (
           <View style={[styles.badge, { backgroundColor: colors.success }]}>
@@ -118,6 +123,9 @@ const styles = StyleSheet.create({
     color: colors.surface,
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  bestSellerBadge: {
+    backgroundColor: colors.warning,
   },
   favoriteBtn: {
     position: 'absolute',
