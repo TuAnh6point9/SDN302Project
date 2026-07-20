@@ -9,6 +9,7 @@ const reasonLabels: Record<RewardReason, string> = {
   purchase: 'Thưởng mua hàng',
   review: 'Thưởng đánh giá',
   redeem_voucher: 'Đổi voucher',
+  claimed_voucher: 'Nhận voucher bằng mã',
 };
 
 const formatDate = (value: string) =>

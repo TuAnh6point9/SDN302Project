@@ -22,6 +22,11 @@ export const rewardApi = {
     return data;
   },
 
+  claimVoucher: async (code: string): Promise<{ message: string; voucher: IVoucher }> => {
+    const { data } = await apiClient.post('/api/rewards/claim-voucher', { code });
+    return data;
+  },
+
   getAdminSummary: async (): Promise<IRewardSummary> => {
     const { data } = await apiClient.get('/api/rewards/admin/summary');
     return data;

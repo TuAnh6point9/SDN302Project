@@ -126,7 +126,7 @@ export interface IRewardStatus {
   today: string;
 }
 
-export type RewardReason = 'daily_login' | 'purchase' | 'review' | 'redeem_voucher';
+export type RewardReason = 'daily_login' | 'purchase' | 'review' | 'redeem_voucher' | 'claimed_voucher';
 
 export interface IRewardVoucherRef {
   _id: string;

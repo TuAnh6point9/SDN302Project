@@ -204,6 +204,52 @@ export const redeemPointsForVoucher = async (userId: Types.ObjectId | string, po
   }
 };
 
+// Nhận 1 voucher công khai (đã tồn tại sẵn, không tạo mới) vào danh sách cá nhân —
+// không trừ điểm, không đụng usageLimit/usedCount thật (chỉ giảm khi áp dụng vào đơn ở checkout).
+// Chặn nhận trùng dựa vào unique index { user, reason, refId } trên RewardHistory.
+export const claimVoucherByCode = async (
+  userId: Types.ObjectId | string,
+  code: string,
+  currentPoints: number
+) => {
+  const normalizedCode = code.trim().toUpperCase();
+  const voucher = await Voucher.findOne({ code: normalizedCode });
+
+  if (!voucher || !voucher.isActive) {
+    throw new ApiError(400, "Mã voucher không hợp lệ");
+  }
+
+  const now = new Date();
+  if (voucher.startsAt && voucher.startsAt > now) {
+    throw new ApiError(400, "Mã voucher chưa đến thời gian sử dụng");
+  }
+  if (voucher.expiresAt && voucher.expiresAt < now) {
+    throw new ApiError(400, "Mã voucher đã hết hạn");
+  }
+  if (voucher.usageLimit && voucher.usedCount >= voucher.usageLimit) {
+    throw new ApiError(400, "Mã voucher đã hết lượt sử dụng");
+  }
+
+  try {
+    await RewardHistory.create({
+      user: userId,
+      points: 0,
+      day: vnDay(),
+      reason: "claimed_voucher",
+      balanceAfter: currentPoints,
+      refId: voucher._id
+    });
+  } catch (error) {
+    const isDuplicate = (error as { code?: number }).code === 11000;
+    if (isDuplicate) {
+      throw new ApiError(409, "Bạn đã nhận voucher này rồi");
+    }
+    throw error;
+  }
+
+  return voucher;
+};
+
 export const getRewardHistory = async (
   userId: Types.ObjectId | string,
   limit = 50

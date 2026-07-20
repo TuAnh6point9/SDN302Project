@@ -5,6 +5,7 @@ import { User } from "../models/User";
 import {
   DAILY_REWARD_POINTS,
   claimDailyReward,
+  claimVoucherByCode,
   getRewardHistory as getRewardHistoryService,
   redeemPointsForVoucher,
   vnDay
@@ -47,6 +48,16 @@ export const redeemVoucher = asyncHandler(async (req: Request, res: Response) =>
     user: user.toJSON(),
     voucher
   });
+});
+
+export const claimVoucher = asyncHandler(async (req: Request, res: Response) => {
+  const voucher = await claimVoucherByCode(
+    req.user!._id as Types.ObjectId,
+    req.body.code,
+    req.user!.points ?? 0
+  );
+
+  res.json({ message: "Nhận voucher thành công", voucher });
 });
 
 export const getRewardSummary = asyncHandler(async (_req: Request, res: Response) => {

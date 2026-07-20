@@ -24,6 +24,7 @@ const reasonLabels: Record<RewardReason, string> = {
   purchase: 'Thưởng mua hàng',
   review: 'Thưởng đánh giá',
   redeem_voucher: 'Đổi voucher',
+  claimed_voucher: 'Nhận voucher bằng mã',
 };
 
 const getVoucherStatus = (voucher: IRewardVoucherRef) => {
@@ -45,6 +46,8 @@ export default function RewardsPage() {
   const [claiming, setClaiming] = useState(false);
   const [redeemPoints, setRedeemPoints] = useState(REDEEM_MIN_POINTS);
   const [redeeming, setRedeeming] = useState(false);
+  const [claimCode, setClaimCode] = useState('');
+  const [claimingCode, setClaimingCode] = useState(false);
   const [error, setError] = useState('');
 
   const fetchData = useCallback(async () => {
@@ -98,10 +101,30 @@ export default function RewardsPage() {
     }
   };
 
+  const handleClaimVoucher = async () => {
+    if (!claimCode.trim()) return;
+    setClaimingCode(true);
+    try {
+      const res = await rewardApi.claimVoucher(claimCode.trim());
+      showToast(`Đã nhận voucher ${res.voucher.code}!`, 'success');
+      setClaimCode('');
+      await fetchData();
+    } catch (err) {
+      showToast(getApiErrorMessage(err, 'Không thể nhận voucher.'), 'error');
+    } finally {
+      setClaimingCode(false);
+    }
+  };
+
   const currentPoints = user?.points ?? 0;
   const canRedeem = currentPoints >= redeemPoints;
   const myVouchers = history
-    .filter((item) => item.reason === 'redeem_voucher' && item.refId && typeof item.refId === 'object')
+    .filter(
+      (item) =>
+        (item.reason === 'redeem_voucher' || item.reason === 'claimed_voucher') &&
+        item.refId &&
+        typeof item.refId === 'object'
+    )
     .map((item) => item.refId as IRewardVoucherRef);
 
   return (
@@ -176,6 +199,32 @@ export default function RewardsPage() {
           {!canRedeem && (
             <p className="text-xs text-red-600">Bạn không đủ điểm để đổi mức này.</p>
           )}
+        </div>
+
+        <div className="bg-white border border-gray-200/60 rounded-2xl shadow-sm p-6 space-y-4">
+          <div className="flex items-center gap-2 font-heading font-bold text-text">
+            <Gift className="w-5 h-5 text-primary" /> Nhập mã voucher
+          </div>
+          <p className="text-sm text-text-secondary">
+            Có mã voucher công khai (VD: khuyến mãi, sự kiện)? Nhập vào đây để lưu vào danh sách của bạn cho dễ theo dõi.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="text"
+              value={claimCode}
+              onChange={(event) => setClaimCode(event.target.value)}
+              placeholder="VD: GREENLEAF2NAM"
+              className="input-field !py-2 text-sm sm:flex-1 uppercase"
+            />
+            <button
+              type="button"
+              className="btn-primary !py-2.5 text-sm disabled:opacity-50"
+              disabled={claimingCode || !claimCode.trim()}
+              onClick={() => void handleClaimVoucher()}
+            >
+              {claimingCode ? 'Đang nhận...' : 'Nhận voucher'}
+            </button>
+          </div>
         </div>
 
         <div className="bg-white border border-gray-200/60 rounded-2xl shadow-sm p-6 space-y-4">

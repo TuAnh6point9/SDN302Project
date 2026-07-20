@@ -316,3 +316,9 @@ export const redeemVoucherSchema = z.object({
     points: z.number().int().positive()
   })
 });
+
+export const claimVoucherSchema = z.object({
+  body: z.object({
+    code: z.string().trim().min(1)
+  })
+});
