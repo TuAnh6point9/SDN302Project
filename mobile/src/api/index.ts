@@ -39,11 +39,20 @@ export const bookApi = {
     (await apiClient.get(`/api/books/${idOrSlug}`)).data.book,
   getBestSellerIds: async (): Promise<string[]> =>
     (await apiClient.get('/api/books/best-sellers')).data.bookIds,
+  createBook: async (payload: any): Promise<IBook> =>
+    (await apiClient.post('/api/books', payload)).data.book,
+  updateBook: async (id: string, payload: any): Promise<IBook> =>
+    (await apiClient.put(`/api/books/${id}`, payload)).data.book,
+  deleteBook: async (id: string): Promise<void> => {
+    await apiClient.delete(`/api/books/${id}`);
+  },
 };
 
 export const categoryApi = {
   getCategories: async (): Promise<ICategory[]> =>
     (await apiClient.get('/api/categories')).data.categories,
+  createCategory: async (payload: { name: string; description?: string; parent?: string }): Promise<ICategory> =>
+    (await apiClient.post('/api/categories', payload)).data.category,
 };
 
 export const cartApi = {
@@ -134,6 +143,11 @@ export const reviewApi = {
     (await apiClient.get(`/api/books/${bookId}/reviews`)).data.reviews,
   createReview: async (bookId: string, rating: number, comment?: string): Promise<IReview> =>
     (await apiClient.post(`/api/books/${bookId}/reviews`, { rating, comment })).data.review,
+  getAllReviews: async (): Promise<IReview[]> =>
+    (await apiClient.get('/api/reviews')).data.reviews,
+  deleteReview: async (reviewId: string): Promise<void> => {
+    await apiClient.delete(`/api/reviews/${reviewId}`);
+  },
 };
 
 export const rewardApi = {
@@ -146,6 +160,15 @@ export const rewardApi = {
     (await apiClient.post('/api/rewards/redeem', { points })).data,
   claimVoucher: async (code: string): Promise<{ message: string; voucher: IVoucher }> =>
     (await apiClient.post('/api/rewards/claim-voucher', { code })).data,
+  getAdminHistory: async (limit = 50): Promise<IRewardHistoryItem[]> =>
+    (await apiClient.get(`/api/rewards/admin/history?limit=${limit}`)).data.history,
+};
+
+export const userApi = {
+  getUsers: async (): Promise<IUser[]> =>
+    (await apiClient.get('/api/users')).data.users,
+  updateUser: async (id: string, payload: { role?: 'customer' | 'admin'; isActive?: boolean }): Promise<IUser> =>
+    (await apiClient.put(`/api/users/${id}`, payload)).data.user,
 };
 
 export const subscriptionApi = {

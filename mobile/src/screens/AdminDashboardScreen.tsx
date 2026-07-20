@@ -184,30 +184,43 @@ export default function AdminDashboardScreen() {
         {/* Menu Quản Trị */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Chức năng quản trị</Text>
-          <View style={styles.menuGrid}>
-            <TouchableOpacity
-              style={styles.menuGridItem}
-              onPress={() => navigation.navigate('AdminOrders')}
-            >
-              <Ionicons name="receipt-outline" size={24} color={colors.primary} />
-              <Text style={styles.menuGridLabel}>Quản lý đơn</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuGridItem}
-              onPress={() => navigation.navigate('AdminInventory')}
-            >
-              <Ionicons name="cube-outline" size={24} color="#1E88E5" />
-              <Text style={styles.menuGridLabel}>Quản lý kho</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuGridItem}
-              onPress={() => navigation.navigate('AdminVouchers')}
-            >
-              <Ionicons name="pricetag-outline" size={24} color="#FFB300" />
-              <Text style={styles.menuGridLabel}>Quản lý voucher</Text>
-            </TouchableOpacity>
+          <View style={styles.menuGridContainer}>
+            <View style={styles.menuGridRow}>
+              <TouchableOpacity style={styles.menuGridItem} onPress={() => navigation.navigate('AdminOrders')}>
+                <Ionicons name="receipt-outline" size={20} color={colors.primary} />
+                <Text style={styles.menuGridLabel}>Đơn hàng</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.menuGridItem} onPress={() => navigation.navigate('AdminInventory')}>
+                <Ionicons name="cube-outline" size={20} color="#1E88E5" />
+                <Text style={styles.menuGridLabel}>Tồn kho</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.menuGridItem} onPress={() => navigation.navigate('AdminVouchers')}>
+                <Ionicons name="pricetag-outline" size={20} color="#FFB300" />
+                <Text style={styles.menuGridLabel}>Voucher</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.menuGridItem} onPress={() => navigation.navigate('AdminBooks')}>
+                <Ionicons name="book-outline" size={20} color="#7C3AED" />
+                <Text style={styles.menuGridLabel}>Sách</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.menuGridRow}>
+              <TouchableOpacity style={styles.menuGridItem} onPress={() => navigation.navigate('AdminCategories')}>
+                <Ionicons name="folder-open-outline" size={20} color="#E65100" />
+                <Text style={styles.menuGridLabel}>Danh mục</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.menuGridItem} onPress={() => navigation.navigate('AdminUsers')}>
+                <Ionicons name="people-outline" size={20} color="#00ACC1" />
+                <Text style={styles.menuGridLabel}>Thành viên</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.menuGridItem} onPress={() => navigation.navigate('AdminReviews')}>
+                <Ionicons name="star-outline" size={20} color="#D81B60" />
+                <Text style={styles.menuGridLabel}>Đánh giá</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.menuGridItem} onPress={() => navigation.navigate('AdminRewardHistory')}>
+                <Ionicons name="gift-outline" size={20} color="#43A047" />
+                <Text style={styles.menuGridLabel}>Lịch sử điểm</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -536,25 +549,27 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     overflow: 'hidden',
   },
-  menuGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  menuGridContainer: {
+    gap: 8,
     marginTop: 8,
+  },
+  menuGridRow: {
+    flexDirection: 'row',
+    gap: 8,
   },
   menuGridItem: {
     flex: 1,
     alignItems: 'center',
     backgroundColor: '#F5F5F5',
     borderRadius: radius.md,
-    paddingVertical: 14,
-    marginHorizontal: 4,
+    paddingVertical: 10,
     borderWidth: 1,
     borderColor: '#E0E0E0',
-    gap: 6,
+    gap: 4,
   },
   menuGridLabel: {
     ...typography.body,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
     color: colors.text,
   },

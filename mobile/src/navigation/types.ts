@@ -20,6 +20,11 @@ export type RootStackParamList = {
   AdminOrderDetail: { orderId: string };
   AdminInventory: undefined;
   AdminVouchers: undefined;
+  AdminBooks: undefined;
+  AdminCategories: undefined;
+  AdminUsers: undefined;
+  AdminReviews: undefined;
+  AdminRewardHistory: undefined;
 };
 
 export type MainTabsParamList = {

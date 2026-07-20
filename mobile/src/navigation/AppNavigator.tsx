@@ -19,6 +19,11 @@ import AdminOrdersScreen from '../screens/AdminOrdersScreen';
 import AdminOrderDetailScreen from '../screens/AdminOrderDetailScreen';
 import AdminInventoryScreen from '../screens/AdminInventoryScreen';
 import AdminVouchersScreen from '../screens/AdminVouchersScreen';
+import AdminBooksScreen from '../screens/AdminBooksScreen';
+import AdminCategoriesScreen from '../screens/AdminCategoriesScreen';
+import AdminUsersScreen from '../screens/AdminUsersScreen';
+import AdminReviewsScreen from '../screens/AdminReviewsScreen';
+import AdminRewardHistoryScreen from '../screens/AdminRewardHistoryScreen';
 import { colors } from '../theme/colors';
 import MainTabs from './MainTabs';
 import { AuthStackParamList, RootStackParamList } from './types';
@@ -68,6 +73,11 @@ export default function AppNavigator() {
             <RootStack.Screen name="AdminOrderDetail" component={AdminOrderDetailScreen} />
             <RootStack.Screen name="AdminInventory" component={AdminInventoryScreen} />
             <RootStack.Screen name="AdminVouchers" component={AdminVouchersScreen} />
+            <RootStack.Screen name="AdminBooks" component={AdminBooksScreen} />
+            <RootStack.Screen name="AdminCategories" component={AdminCategoriesScreen} />
+            <RootStack.Screen name="AdminUsers" component={AdminUsersScreen} />
+            <RootStack.Screen name="AdminReviews" component={AdminReviewsScreen} />
+            <RootStack.Screen name="AdminRewardHistory" component={AdminRewardHistoryScreen} />
           </RootStack.Navigator>
           <DailyRewardModal />
         </>
