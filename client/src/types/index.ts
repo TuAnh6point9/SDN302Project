@@ -128,6 +128,16 @@ export interface IRewardStatus {
 
 export type RewardReason = 'daily_login' | 'purchase' | 'review' | 'redeem_voucher';
 
+export interface IRewardVoucherRef {
+  _id: string;
+  code: string;
+  value: number;
+  usageLimit?: number;
+  usedCount: number;
+  expiresAt?: string;
+  isActive: boolean;
+}
+
 export interface IRewardHistoryItem {
   _id: string;
   user: string | Pick<IUser, '_id' | 'name' | 'email'>;
@@ -135,7 +145,7 @@ export interface IRewardHistoryItem {
   day: string;
   reason: RewardReason;
   balanceAfter?: number;
-  refId?: string;
+  refId?: string | IRewardVoucherRef | null;
   createdAt: string;
   updatedAt: string;
 }

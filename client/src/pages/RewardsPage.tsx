@@ -3,7 +3,7 @@ import { Coins, Gift, TicketPercent } from 'lucide-react';
 import { rewardApi } from '../api/rewardApi';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import type { IRewardHistoryItem, IRewardStatus, RewardReason } from '../types';
+import type { IRewardHistoryItem, IRewardStatus, IRewardVoucherRef, RewardReason } from '../types';
 import { getApiErrorMessage } from '../utils/errors';
 
 const REDEEM_MIN_POINTS = 100;
@@ -24,6 +24,16 @@ const reasonLabels: Record<RewardReason, string> = {
   purchase: 'Thưởng mua hàng',
   review: 'Thưởng đánh giá',
   redeem_voucher: 'Đổi voucher',
+};
+
+const getVoucherStatus = (voucher: IRewardVoucherRef) => {
+  if (voucher.usedCount >= (voucher.usageLimit ?? 1)) {
+    return { label: 'Đã dùng', className: 'bg-gray-100 text-gray-600' };
+  }
+  if (voucher.expiresAt && new Date(voucher.expiresAt) < new Date()) {
+    return { label: 'Hết hạn', className: 'bg-red-50 text-red-600' };
+  }
+  return { label: 'Còn hạn', className: 'bg-primary/10 text-primary' };
 };
 
 export default function RewardsPage() {
@@ -90,6 +100,9 @@ export default function RewardsPage() {
 
   const currentPoints = user?.points ?? 0;
   const canRedeem = currentPoints >= redeemPoints;
+  const myVouchers = history
+    .filter((item) => item.reason === 'redeem_voucher' && item.refId && typeof item.refId === 'object')
+    .map((item) => item.refId as IRewardVoucherRef);
 
   return (
     <div className="page-container py-8 md:py-12">
@@ -164,6 +177,36 @@ export default function RewardsPage() {
             <p className="text-xs text-red-600">Bạn không đủ điểm để đổi mức này.</p>
           )}
         </div>
+
+        {myVouchers.length > 0 && (
+          <div className="bg-white border border-gray-200/60 rounded-2xl shadow-sm p-6 space-y-4">
+            <div className="flex items-center gap-2 font-heading font-bold text-text">
+              <TicketPercent className="w-5 h-5 text-primary" /> Voucher của tôi
+            </div>
+            <div className="space-y-3">
+              {myVouchers.map((voucher) => {
+                const status = getVoucherStatus(voucher);
+                return (
+                  <div
+                    key={voucher._id}
+                    className="flex items-center justify-between gap-3 p-3 border border-gray-100 rounded-xl"
+                  >
+                    <div>
+                      <p className="font-mono font-bold text-text">{voucher.code}</p>
+                      <p className="text-xs text-text-secondary">
+                        Giảm {formatPrice(voucher.value)}
+                        {voucher.expiresAt && ` — HSD ${new Intl.DateTimeFormat('vi-VN').format(new Date(voucher.expiresAt))}`}
+                      </p>
+                    </div>
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${status.className}`}>
+                      {status.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="bg-white border border-gray-200/60 rounded-2xl shadow-sm overflow-hidden">
           {loading ? (

@@ -207,4 +207,7 @@ export const redeemPointsForVoucher = async (userId: Types.ObjectId | string, po
 export const getRewardHistory = async (
   userId: Types.ObjectId | string,
   limit = 50
-) => RewardHistory.find({ user: userId }).sort({ createdAt: -1 }).limit(limit);
+) => RewardHistory.find({ user: userId })
+  .sort({ createdAt: -1 })
+  .limit(limit)
+  .populate({ path: "refId", model: "Voucher" });
