@@ -31,7 +31,7 @@ const sidebarLinks = [
   { to: '/admin/rewards', label: 'Điểm thưởng', icon: Gift },
   { to: '/admin/reviews', label: 'Quản lý đánh giá', icon: MessageSquare },
   { to: '/admin/users', label: 'Quản lý người dùng', icon: Users },
-  { to: '/notifications', label: 'Thông báo', icon: Bell },
+  { to: '/admin/notifications', label: 'Thông báo', icon: Bell },
 ];
 
 export default function AdminLayout() {

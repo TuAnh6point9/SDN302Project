@@ -104,6 +104,7 @@ export const router = createBrowserRouter([
       { path: 'inventory', element: lazyPage(<InventoryManagePage />) },
       { path: 'rewards', element: lazyPage(<RewardDashboardPage />) },
       { path: 'users', element: lazyPage(<UsersManagePage />) },
+      { path: 'notifications', element: lazyPage(<NotificationsPage />) },
     ],
   },
 ]);
