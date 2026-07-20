@@ -1,7 +1,7 @@
 import { Router } from "express";
 import {
   createVoucher,
-  getHomepageEventVoucher,
+  getHomepageEventVouchers,
   getVouchers,
   updateVoucher,
   validateVoucher
@@ -16,7 +16,7 @@ import {
 
 const router = Router();
 
-router.get("/homepage-event", getHomepageEventVoucher);
+router.get("/homepage-event", getHomepageEventVouchers);
 router.get("/validate/:code", protect, validate(validateVoucherSchema), validateVoucher);
 router.get("/", protect, requireAdmin, getVouchers);
 router.post("/", protect, requireAdmin, validate(createVoucherSchema), createVoucher);

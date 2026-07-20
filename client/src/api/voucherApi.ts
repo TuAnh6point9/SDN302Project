@@ -29,8 +29,8 @@ export const voucherApi = {
     return data.voucher;
   },
 
-  getHomepageEvent: async (): Promise<IVoucher | null> => {
+  getHomepageEvents: async (): Promise<IVoucher[]> => {
     const { data } = await apiClient.get('/api/vouchers/homepage-event');
-    return data.voucher;
+    return data.vouchers;
   },
 };

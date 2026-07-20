@@ -285,7 +285,8 @@ const vouchers = [
     minOrderValue: 300000,
     usageLimit: 30,
     usedCount: 1,
-    isActive: true
+    isActive: true,
+    isHomepageEvent: true
   },
   {
     code: "GREENLEAF2NAM",

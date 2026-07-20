@@ -52,14 +52,13 @@ export default function HomePage() {
   const [featuredBooks, setFeaturedBooks] = useState<IBook[]>([]);
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [bestSellerIds, setBestSellerIds] = useState<Set<string>>(new Set());
-  const [promoVoucher, setPromoVoucher] = useState<IVoucher | null>(null);
+  const [promoVouchers, setPromoVouchers] = useState<IVoucher[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const handleCopyVoucher = async () => {
-    if (!promoVoucher) return;
+  const handleCopyVoucher = async (code: string) => {
     try {
-      await navigator.clipboard.writeText(promoVoucher.code);
+      await navigator.clipboard.writeText(code);
       showToast('Đã sao chép mã giảm giá.', 'success');
     } catch {
       showToast('Không thể sao chép, vui lòng nhập mã thủ công.', 'error');
@@ -95,9 +94,9 @@ export default function HomePage() {
         // Badge chỉ là tiện ích hiển thị — lỗi thì bỏ qua
       });
 
-    // Fetch voucher đang được admin chọn làm banner sự kiện (có thể không có)
-    voucherApi.getHomepageEvent()
-      .then(setPromoVoucher)
+    // Fetch các voucher đang được admin chọn làm banner sự kiện (có thể không có, có thể nhiều)
+    voucherApi.getHomepageEvents()
+      .then(setPromoVouchers)
       .catch(() => {
         // Banner chỉ là tiện ích hiển thị — lỗi thì bỏ qua, không chặn trang chủ
       });
@@ -203,35 +202,42 @@ export default function HomePage() {
         </div>
       </section>
 
-      {promoVoucher && (
+      {promoVouchers.length > 0 && (
         <section className="page-container">
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-emerald-700 text-white p-6 md:p-8 shadow-lg flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="space-y-2 text-center md:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/15 rounded-full text-xs font-bold uppercase tracking-wider border border-white/20">
-                <Gift className="w-3.5 h-3.5" /> Ưu đãi mừng GreenLeaf Books
-              </div>
-              <p className="text-white/85 text-sm max-w-md">
-                Giảm ngay {promoVoucher.type === 'percent' ? `${promoVoucher.value}%` : formatPrice(promoVoucher.value)}
-                {promoVoucher.minOrderValue > 0 && ` cho đơn từ ${formatPrice(promoVoucher.minOrderValue)}`}
-                {promoVoucher.maxDiscount ? ` (tối đa ${formatPrice(promoVoucher.maxDiscount)})` : ''}
-                {' '}khi nhập mã bên dưới lúc thanh toán.
-              </p>
-              {promoVoucher.expiresAt && (
-                <p className="text-white/60 text-xs">
-                  Áp dụng đến hết {new Date(promoVoucher.expiresAt).toLocaleDateString('vi-VN')}
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-2 bg-white/10 border border-white/25 rounded-2xl px-5 py-3 backdrop-blur-md shrink-0">
-              <span className="font-mono font-bold text-lg tracking-widest">{promoVoucher.code}</span>
-              <button
-                onClick={() => void handleCopyVoucher()}
-                className="p-2 rounded-xl bg-white/15 hover:bg-white/25 transition-colors"
-                title="Sao chép mã"
+          <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1">
+            {promoVouchers.map((voucher) => (
+              <div
+                key={voucher._id}
+                className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-emerald-700 text-white p-6 md:p-8 shadow-lg flex flex-col md:flex-row items-center justify-between gap-6 shrink-0 snap-start w-full md:w-[42rem] max-w-full"
               >
-                <Copy className="w-4 h-4" />
-              </button>
-            </div>
+                <div className="space-y-2 text-center md:text-left">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/15 rounded-full text-xs font-bold uppercase tracking-wider border border-white/20">
+                    <Gift className="w-3.5 h-3.5" /> Ưu đãi mừng GreenLeaf Books
+                  </div>
+                  <p className="text-white/85 text-sm max-w-md">
+                    Giảm ngay {voucher.type === 'percent' ? `${voucher.value}%` : formatPrice(voucher.value)}
+                    {voucher.minOrderValue > 0 && ` cho đơn từ ${formatPrice(voucher.minOrderValue)}`}
+                    {voucher.maxDiscount ? ` (tối đa ${formatPrice(voucher.maxDiscount)})` : ''}
+                    {' '}khi nhập mã bên dưới lúc thanh toán.
+                  </p>
+                  {voucher.expiresAt && (
+                    <p className="text-white/60 text-xs">
+                      Áp dụng đến hết {new Date(voucher.expiresAt).toLocaleDateString('vi-VN')}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 bg-white/10 border border-white/25 rounded-2xl px-5 py-3 backdrop-blur-md shrink-0">
+                  <span className="font-mono font-bold text-lg tracking-widest">{voucher.code}</span>
+                  <button
+                    onClick={() => void handleCopyVoucher(voucher.code)}
+                    className="p-2 rounded-xl bg-white/15 hover:bg-white/25 transition-colors"
+                    title="Sao chép mã"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
       )}

@@ -9,11 +9,6 @@ export const getVouchers = asyncHandler(async (_req: Request, res: Response) => 
 });
 
 export const createVoucher = asyncHandler(async (req: Request, res: Response) => {
-  // Chỉ 1 voucher được làm banner trang chủ tại 1 thời điểm — tắt voucher đang bật trước đó.
-  if (req.body.isHomepageEvent) {
-    await Voucher.updateMany({ isHomepageEvent: true }, { isHomepageEvent: false });
-  }
-
   const voucher = await Voucher.create({
     ...req.body,
     code: req.body.code.toUpperCase(),
@@ -25,11 +20,6 @@ export const createVoucher = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const updateVoucher = asyncHandler(async (req: Request, res: Response) => {
-  // Chỉ 1 voucher được làm banner trang chủ tại 1 thời điểm — tắt voucher đang bật trước đó.
-  if (req.body.isHomepageEvent) {
-    await Voucher.updateMany({ isHomepageEvent: true }, { isHomepageEvent: false });
-  }
-
   const update: Record<string, unknown> = { ...req.body };
 
   if (req.body.code) {
@@ -62,7 +52,12 @@ export const validateVoucher = asyncHandler(async (req: Request, res: Response) 
   res.json(discount);
 });
 
-export const getHomepageEventVoucher = asyncHandler(async (_req: Request, res: Response) => {
-  const voucher = await Voucher.findOne({ isHomepageEvent: true, isActive: true });
-  res.json({ voucher });
+export const getHomepageEventVouchers = asyncHandler(async (_req: Request, res: Response) => {
+  const vouchers = await Voucher.find({
+    isHomepageEvent: true,
+    isActive: true,
+    $or: [{ expiresAt: { $exists: false } }, { expiresAt: null }, { expiresAt: { $gt: new Date() } }]
+  }).sort({ createdAt: -1 });
+
+  res.json({ vouchers });
 });
