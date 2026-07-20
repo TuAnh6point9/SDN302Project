@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Award, BookOpen, Copy, Gift, Leaf, PawPrint, TreePine } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Award, BookOpen, Copy, Gift, Leaf, PawPrint, TreePine } from 'lucide-react';
 import { bookApi } from '../api/bookApi';
 import { categoryApi } from '../api/categoryApi';
 import { voucherApi } from '../api/voucherApi';
@@ -55,6 +55,24 @@ export default function HomePage() {
   const [promoVouchers, setPromoVouchers] = useState<IVoucher[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const promoScrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollPromoLeft, setCanScrollPromoLeft] = useState(false);
+  const [canScrollPromoRight, setCanScrollPromoRight] = useState(false);
+
+  const updatePromoScrollButtons = () => {
+    const el = promoScrollRef.current;
+    if (!el) return;
+    setCanScrollPromoLeft(el.scrollLeft > 4);
+    setCanScrollPromoRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+
+  const scrollPromoBy = (direction: 1 | -1) => {
+    const el = promoScrollRef.current;
+    if (!el) return;
+    const card = el.firstElementChild as HTMLElement | null;
+    const step = card ? card.offsetWidth + 16 : el.clientWidth; // 16 = gap-4
+    el.scrollBy({ left: direction * step, behavior: 'smooth' });
+  };
 
   const handleCopyVoucher = async (code: string) => {
     try {
@@ -64,6 +82,10 @@ export default function HomePage() {
       showToast('Không thể sao chép, vui lòng nhập mã thủ công.', 'error');
     }
   };
+
+  useEffect(() => {
+    updatePromoScrollButtons();
+  }, [promoVouchers]);
 
   useEffect(() => {
     const slideTimer = setInterval(() => {
@@ -204,7 +226,30 @@ export default function HomePage() {
 
       {promoVouchers.length > 0 && (
         <section className="page-container">
-          <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1">
+          <div className="relative">
+            {promoVouchers.length > 1 && canScrollPromoLeft && (
+              <button
+                onClick={() => scrollPromoBy(-1)}
+                aria-label="Voucher trước"
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/10 hover:bg-white/25 text-white rounded-full flex items-center justify-center border border-white/20 backdrop-blur-sm transition-all active:scale-95 shadow-lg"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            )}
+            {promoVouchers.length > 1 && canScrollPromoRight && (
+              <button
+                onClick={() => scrollPromoBy(1)}
+                aria-label="Voucher tiếp theo"
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/10 hover:bg-white/25 text-white rounded-full flex items-center justify-center border border-white/20 backdrop-blur-sm transition-all active:scale-95 shadow-lg"
+              >
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            )}
+            <div
+              ref={promoScrollRef}
+              onScroll={updatePromoScrollButtons}
+              className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1 scrollbar-hide"
+            >
             {promoVouchers.map((voucher) => (
               <div
                 key={voucher._id}
@@ -238,6 +283,7 @@ export default function HomePage() {
                 </div>
               </div>
             ))}
+            </div>
           </div>
         </section>
       )}

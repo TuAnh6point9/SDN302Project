@@ -102,6 +102,13 @@ html {
   @apply bg-gray-300 rounded-full hover:bg-gray-400;
 }
 
+.scrollbar-hide {
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Animations */
 @keyframes float {
   0%, 100% { transform: translateY(0) rotate(3deg); }
